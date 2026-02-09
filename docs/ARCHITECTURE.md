@@ -1,0 +1,125 @@
+## Architecture
+
+This document describes the architecture of the Stash MCP Server, a Model Context Protocol server implementation for Atlassian Stash/Bitbucket Server.
+
+### Folder Structure
+
+```
+src/StashMcpServer/
+├── Program.cs                         # Entry point — dual transport (stdio/HTTP)
+├── StashMcpServer.csproj
+│
+├── Configuration/
+│   ├── CommandLineParser.cs           # CLI argument and env var parsing
+│   ├── ServerSettings.cs              # Runtime server settings (IServerSettings)
+│   └── ResilienceSettings.cs          # Retry, circuit breaker, cache settings
+│
+├── Extensions/
+│   └── ServiceCollectionExtensions.cs # DI registration helpers
+│
+├── Logging/
+│   ├── McpLogDispatcher.cs            # Background service dispatching logs to MCP
+│   ├── McpLogQueue.cs                 # Thread-safe log message queue
+│   └── McpSerilogSink.cs             # Serilog sink bridging to MCP log queue
+│
+├── Services/
+│   ├── IBitbucketCacheService.cs      # Interface — cache abstraction
+│   ├── BitbucketCacheService.cs       # IMemoryCache + ConcurrentDict caching
+│   ├── IResilientApiService.cs        # Interface — resilient API calls
+│   ├── ResilientApiService.cs         # Polly-based retry + circuit breaker
+│   ├── IServerSettings.cs             # Interface — server configuration
+│   ├── CacheKeys.cs                   # Cache key generator
+│   ├── ServerInstructions.cs          # MCP server instructions text
+│   └── StartupService.cs             # Hosted service for startup validation
+│
+├── Formatting/
+│   ├── IDiffFormatter.cs              # Interface — diff formatting
+│   ├── DiffFormatter.cs               # Formats diff output for readability
+│   ├── MinimalOutputFormatter.cs      # Compact output for list operations
+│   └── ResponseTruncation.cs          # 50KB response size limiter
+│
+└── Tools/
+    ├── ToolBase.cs                    # Abstract base — shared dependencies & helpers
+    ├── ToolHelpers.cs                 # Static utilities (NormalizeRef, etc.)
+    ├── Projects/ProjectTools.cs       # list_projects
+    ├── Repositories/RepositoryTools.cs # list_repositories, get_repository_overview, etc.
+    ├── PullRequests/PullRequestTools.cs # 8 PR tools + 4 comment + 4 task tools
+    ├── Search/SearchTools.cs          # search_code, search_commits, search_pull_requests, search_users
+    ├── Git/GitTools.cs                # list_branches, list_tags, list_files
+    ├── History/HistoryTools.cs        # get_commit, get_commit_changes, get_commit_context
+    ├── Builds/BuildTools.cs           # get_build_status, get_pull_request_build_status, list_builds
+    ├── Dashboard/DashboardTools.cs    # get_my_pull_requests, get_inbox_pull_requests
+    └── Integrations/IntegrationTools.cs # get_pr_jira_issues
+```
+
+### Layers
+
+The application follows a layered architecture with clear separation of concerns:
+
+```
+        ┌────────────────────────────────────────┐
+        │           MCP Transport Layer           │
+        │   stdio (local)  |  HTTP /mcp (Docker)  │
+        └─────────────────┬──────────────────────┘
+                          │
+        ┌─────────────────▼──────────────────────┐
+        │           Tool Layer (9 classes)         │
+        │   Each class: [McpServerToolType]        │
+        │   Inherits ToolBase for shared helpers   │
+        │   Discovered via assembly scanning       │
+        └─────────────────┬──────────────────────┘
+                          │
+        ┌─────────────────▼──────────────────────┐
+        │         Formatting Layer                 │
+        │   DiffFormatter, ResponseTruncation,     │
+        │   MinimalOutputFormatter                 │
+        └─────────────────┬──────────────────────┘
+                          │
+        ┌─────────────────▼──────────────────────┐
+        │       ResilientApiService                │
+        │   Polly: retry + circuit breaker         │
+        │   Graceful degradation with stale cache  │
+        └─────────────────┬──────────────────────┘
+                          │
+        ┌─────────────────▼──────────────────────┐
+        │       BitbucketCacheService              │
+        │   IMemoryCache with configurable TTL     │
+        │   ConcurrentDict for static data         │
+        └─────────────────┬──────────────────────┘
+                          │
+        ┌─────────────────▼──────────────────────┐
+        │     BitbucketServer.Net Client           │
+        │     REST API calls to Bitbucket Server   │
+        └──────────────────────────────────────────┘
+```
+
+### Key Design Decisions
+
+**Domain-Separated Tools**: Each functional area (projects, pull requests, search, etc.) has its own tool class. Tool classes are discovered at startup via `WithToolsFromAssembly()` — no manual registration needed.
+
+**ToolBase Pattern**: All tool classes inherit `ToolBase`, which provides:
+- Common dependencies via constructor (logger, cache, API service, settings)
+- Shared helpers: `NormalizeProjectKey`, `NormalizeRepositorySlug`, `CheckReadOnlyMode`, `LogToolInvocation`
+- Consistent error handling and logging
+
+**Interface-Driven Services**: Core services (`IBitbucketCacheService`, `IResilientApiService`, `IServerSettings`, `IDiffFormatter`) are registered as interfaces, enabling unit testing with mocks.
+
+**Dual Transport**: The server supports both `stdio` (for local MCP clients like VS Code) and `HTTP` (for Docker container deployments). Transport is selected via `--transport` CLI argument or `MCP_TRANSPORT` environment variable.
+
+**Resilience**: All Bitbucket API calls go through `ResilientApiService`, which wraps each call with:
+- Retry with exponential backoff (configurable, default 3 attempts)
+- Circuit breaker (configurable timeout)
+- Graceful degradation to stale cached data when the API is unavailable
+
+**Response Safety**: Output is truncated at 50KB to prevent context window overflow in AI clients.
+
+### Dependencies
+
+| Package | Purpose |
+|---------|---------|
+| ModelContextProtocol | MCP server framework (stdio transport) |
+| ModelContextProtocol.AspNetCore | HTTP transport for container deployments |
+| BitbucketServer.Net | Bitbucket Server REST API client |
+| Serilog.AspNetCore | Structured logging |
+| Microsoft.Extensions.Resilience | Polly integration for retry/circuit breaker |
+| Meziantou.Analyzer | Code quality analysis |
