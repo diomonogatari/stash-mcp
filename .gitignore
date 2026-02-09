@@ -1,0 +1,72 @@
+.nuget/
+
+# .NET Core build folders - use ** to match anywhere in tree
+**/bin/
+**/obj/
+
+# Build output/artifacts folder
+artifacts/*.pdb
+artifacts/*.dll
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Test files
+pull_request_diff.txt
+
+# Visual Studio files
+.vs/
+*.ncrunch*
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results - use ** to match anywhere in tree
+**/[Dd]ebug/
+**/[Rr]elease/
+**/x64/
+**/x86/
+**/[Aa][Rr][Mm]/
+**/[Aa][Rr][Mm]64/
+**/bld/
+**/[Ll]og/
+
+# Configuration files with secrets
+**/appsettings.json
+**/appsettings.*.json
+!**/appsettings.example.json
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NuGet packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/packages/*
+# except build/, which is used as an MSBuild target.
+!**/packages/build/
+# NuGet v3's project.json files produces more ignorable files
+*.nuget.props
+*.nuget.targets
+
+# Other
+.DS_Store
+Thumbs.db
+
+# User-specific files
+*.code-workspace
+
+# Environment variables
+.env

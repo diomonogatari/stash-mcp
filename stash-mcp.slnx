@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/StashMcpServer/StashMcpServer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/StashMcpServer.Tests/StashMcpServer.Tests.csproj" />
+  </Folder>
+  <Folder Name="/lib/">
+    <Project Path="lib/Bitbucket.Net/src/Bitbucket.Net/Bitbucket.Net.csproj" />
+  </Folder>
+</Solution>
