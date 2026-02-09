@@ -1,0 +1,42 @@
+name: stash-mcp
+image: mcp/stash-mcp
+type: server
+meta:
+  category: devops
+  tags:
+    - bitbucket
+    - stash
+    - devops
+    - code-review
+    - pull-requests
+about:
+  title: Bitbucket Server (Stash)
+  description: >-
+    MCP server for Atlassian Bitbucket Server (Stash) with 40 tools covering
+    repositories, pull requests, code review, commits, builds, search, and Jira
+    integration. Features workflow-optimized tools that reduce multiple API calls
+    to a single invocation.
+  icon: https://avatars.githubusercontent.com/u/182288589?s=200&v=4
+source:
+  project: https://github.com/diomonogatari/stash-mcp
+  commit: 7afab6d85ae8d389025373ae241bc9b5756e2c79
+config:
+  description: >-
+    Configure the connection to your Bitbucket Server (Stash) instance.
+    Requires a Personal Access Token with repository read/write permissions.
+  secrets:
+    - name: stash-mcp.bitbucket_token
+      env: BITBUCKET_TOKEN
+      example: <YOUR_PERSONAL_ACCESS_TOKEN>
+  env:
+    - name: BITBUCKET_URL
+      example: https://your-stash-server.com/
+      value: "{{stash-mcp.bitbucket_url}}"
+  parameters:
+    type: object
+    properties:
+      bitbucket_url:
+        type: string
+        description: Bitbucket Server base URL (e.g., https://stash.example.com/)
+    required:
+      - bitbucket_url

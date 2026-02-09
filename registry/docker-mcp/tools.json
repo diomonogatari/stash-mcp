@@ -1,0 +1,401 @@
+[
+  {
+    "name": "list_projects",
+    "description": "Lists all projects in the Bitbucket Server instance.",
+    "arguments": []
+  },
+  {
+    "name": "get_my_pull_requests",
+    "description": "Get pull requests authored by, reviewing, or participating in by the current user across all repositories.",
+    "arguments": [
+      { "name": "role", "type": "string", "desc": "Filter by role: AUTHOR, REVIEWER, or PARTICIPANT. Default is AUTHOR." },
+      { "name": "state", "type": "string", "desc": "Filter by state: OPEN, MERGED, DECLINED, or ALL. Default is OPEN." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of pull requests to return. Default is 25." }
+    ]
+  },
+  {
+    "name": "get_inbox_pull_requests",
+    "description": "Get pull requests in the current user's review inbox - PRs awaiting their attention.",
+    "arguments": [
+      { "name": "role", "type": "string", "desc": "Filter by role in the PR: REVIEWER (default) or empty for all inbox items." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of pull requests to return. Default is 25." }
+    ]
+  },
+  {
+    "name": "get_recent_repositories",
+    "description": "Get repositories the current user has recently accessed.",
+    "arguments": []
+  },
+  {
+    "name": "get_server_info",
+    "description": "Get information about the Bitbucket Server instance and cache status.",
+    "arguments": []
+  },
+  {
+    "name": "get_current_user",
+    "description": "Get information about the currently authenticated user.",
+    "arguments": []
+  },
+  {
+    "name": "list_repositories",
+    "description": "List repositories within a specific project.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "minimalOutput", "type": "boolean", "desc": "Return minimal output (repository slugs only). Default is false." }
+    ]
+  },
+  {
+    "name": "get_repository_overview",
+    "description": "Get comprehensive repository information including default branch, recent branches, tags, and structure.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "branchLimit", "type": "integer", "desc": "Maximum number of branches to include (default: 10)." },
+      { "name": "tagLimit", "type": "integer", "desc": "Maximum number of tags to include (default: 5)." },
+      { "name": "includeOpenPRs", "type": "boolean", "desc": "Include recent open pull requests (default: true)." },
+      { "name": "prLimit", "type": "integer", "desc": "Maximum open PRs to include (default: 5)." }
+    ]
+  },
+  {
+    "name": "get_file_content",
+    "description": "Gets the raw content of a file in a repository at a specific commit or branch.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "filePath", "type": "string", "desc": "The path to the file." },
+      { "name": "at", "type": "string", "desc": "The commit hash or branch name. Defaults to the repository's default branch." }
+    ]
+  },
+  {
+    "name": "list_branches",
+    "description": "List branches in a repository, optionally filtered by name.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "filter", "type": "string", "desc": "Optional filter to match branch names." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of branches to return (default 50)." },
+      { "name": "minimalOutput", "type": "boolean", "desc": "Return minimal output (branch names only). Default is false." }
+    ]
+  },
+  {
+    "name": "list_tags",
+    "description": "List tags to identify release points.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "filter", "type": "string", "desc": "Optional filter applied to tag names." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of tags to return (default 50)." },
+      { "name": "minimalOutput", "type": "boolean", "desc": "Return minimal output (tag names only). Default is false." }
+    ]
+  },
+  {
+    "name": "list_files",
+    "description": "List files in a repository at a specific path or root.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "path", "type": "string", "desc": "Path within the repository to list files from." },
+      { "name": "at", "type": "string", "desc": "Commit hash or branch name." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of files to return (default 500)." },
+      { "name": "minimalOutput", "type": "boolean", "desc": "Return minimal output (file paths only). Default is false." }
+    ]
+  },
+  {
+    "name": "search_code",
+    "description": "Search for code patterns in repository files. Returns file paths with matching line numbers and context snippets.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "query", "type": "string", "desc": "The search query - supports plain text or regex pattern." },
+      { "name": "pathPattern", "type": "string", "desc": "Glob pattern to filter files (e.g., *.cs, src/**/*.ts)." },
+      { "name": "at", "type": "string", "desc": "Branch or commit to search." },
+      { "name": "isRegex", "type": "boolean", "desc": "Use regex matching instead of literal text search. Default: false." },
+      { "name": "caseSensitive", "type": "boolean", "desc": "Case-sensitive search. Default: false." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of results to return. Default: 30, Max: 100." }
+    ]
+  },
+  {
+    "name": "search_commits",
+    "description": "Search commit messages across a repository or multiple repositories by message text, author, and/or date range.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository. If empty, searches all repos in project." },
+      { "name": "messageContains", "type": "string", "desc": "Search text to match in commit messages." },
+      { "name": "author", "type": "string", "desc": "Filter by author name or email." },
+      { "name": "fromRef", "type": "string", "desc": "Branch or commit to search from." },
+      { "name": "since", "type": "string", "desc": "Only include commits after this date (ISO 8601)." },
+      { "name": "until", "type": "string", "desc": "Only include commits before this date (ISO 8601)." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of commits to return. Default: 50, Max: 500." }
+    ]
+  },
+  {
+    "name": "search_pull_requests",
+    "description": "Search pull requests by title, description, author, or state across a repository or project.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository. If empty, searches all repos." },
+      { "name": "textContains", "type": "string", "desc": "Search text to match in PR title or description." },
+      { "name": "author", "type": "string", "desc": "Filter by author username or display name." },
+      { "name": "state", "type": "string", "desc": "Filter by state: OPEN, MERGED, DECLINED, or ALL. Default: ALL." },
+      { "name": "targetBranch", "type": "string", "desc": "Filter by target branch name." },
+      { "name": "sourceBranch", "type": "string", "desc": "Filter by source branch name." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of results to return. Default: 25, Max: 100." }
+    ]
+  },
+  {
+    "name": "search_users",
+    "description": "Search for Bitbucket users by name, username, or email.",
+    "arguments": [
+      { "name": "query", "type": "string", "desc": "Search query (matches name, username, or email)." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of results to return. Default: 25, Max: 100." }
+    ]
+  },
+  {
+    "name": "list_commits",
+    "description": "List commits in a repository. Returns commit history for a branch, tag, or from a specific commit.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "ref", "type": "string", "desc": "Branch name, tag, or commit hash to start listing from." },
+      { "name": "path", "type": "string", "desc": "File or directory path to filter commits." },
+      { "name": "merges", "type": "string", "desc": "How to handle merge commits: include, exclude, or only." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of commits to return (default: 25, max: 100)." }
+    ]
+  },
+  {
+    "name": "get_commit",
+    "description": "Get details of a specific commit.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "commitId", "type": "string", "desc": "The hash of the commit to retrieve." }
+    ]
+  },
+  {
+    "name": "get_commit_changes",
+    "description": "View the files changed in a specific commit.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "commitId", "type": "string", "desc": "The hash of the commit." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of changed files to return (default 100)." }
+    ]
+  },
+  {
+    "name": "get_commit_context",
+    "description": "Get complete commit details including metadata, changed files, and optionally the diff.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "commitId", "type": "string", "desc": "The commit hash or short hash." },
+      { "name": "includeDiff", "type": "boolean", "desc": "Include file-level diff content (default: false)." },
+      { "name": "contextLines", "type": "integer", "desc": "Number of context lines around changes (default: 3)." }
+    ]
+  },
+  {
+    "name": "compare_refs",
+    "description": "Compare the diff between two refs (branches, tags, or commits) in a repository.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "from", "type": "string", "desc": "The source ref (e.g., feature branch)." },
+      { "name": "to", "type": "string", "desc": "The target ref (e.g., main branch)." },
+      { "name": "srcPath", "type": "string", "desc": "Optional path filter to limit diff scope." },
+      { "name": "contextLines", "type": "integer", "desc": "Number of context lines around each change (default: 3)." }
+    ]
+  },
+  {
+    "name": "list_pull_requests",
+    "description": "Lists pull requests for a repository with optional filtering.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "state", "type": "string", "desc": "PR state: OPEN, MERGED, DECLINED, ALL. Default is OPEN." },
+      { "name": "limit", "type": "integer", "desc": "Maximum results to return. Default is 25." },
+      { "name": "minimalOutput", "type": "boolean", "desc": "Return compact format. Default is false." }
+    ]
+  },
+  {
+    "name": "get_pull_request",
+    "description": "Gets detailed metadata for a specific pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." }
+    ]
+  },
+  {
+    "name": "get_pull_request_context",
+    "description": "Get complete pull request details including metadata, comments, and optionally diff.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "includeComments", "type": "boolean", "desc": "Include comments and discussions (default: true)." },
+      { "name": "includeDiff", "type": "boolean", "desc": "Include diff/changes summary (default: false)." },
+      { "name": "includeActivity", "type": "boolean", "desc": "Include activity timeline (default: false)." },
+      { "name": "includeTasks", "type": "boolean", "desc": "Include tasks attached to the PR (default: true)." }
+    ]
+  },
+  {
+    "name": "get_pull_request_diff",
+    "description": "Gets the diff text for a specific pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." }
+    ]
+  },
+  {
+    "name": "create_pull_request",
+    "description": "Create a new pull request from the source branch into the target branch.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "title", "type": "string", "desc": "The title of the pull request." },
+      { "name": "sourceRef", "type": "string", "desc": "The source branch." },
+      { "name": "targetRef", "type": "string", "desc": "The target branch." },
+      { "name": "description", "type": "string", "desc": "Optional pull request description." },
+      { "name": "reviewers", "type": "string", "desc": "Comma-separated reviewer usernames." }
+    ]
+  },
+  {
+    "name": "update_pull_request",
+    "description": "Update pull request metadata such as title, description, or reviewers.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "title", "type": "string", "desc": "Optional new title." },
+      { "name": "description", "type": "string", "desc": "Optional new description." },
+      { "name": "addReviewers", "type": "string", "desc": "Comma-separated reviewers to add." },
+      { "name": "removeReviewers", "type": "string", "desc": "Comma-separated reviewers to remove." }
+    ]
+  },
+  {
+    "name": "approve_pull_request",
+    "description": "Approve a pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." }
+    ]
+  },
+  {
+    "name": "get_pull_request_comments",
+    "description": "Gets all comments for a specific pull request, including code context and nested replies.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "anchorState", "type": "string", "desc": "Filter by anchor state: ACTIVE, ORPHANED, or ALL." }
+    ]
+  },
+  {
+    "name": "get_pull_request_unresolved_comments",
+    "description": "Gets only the unresolved/active comments for a pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." }
+    ]
+  },
+  {
+    "name": "reply_to_pull_request_comment",
+    "description": "Reply to an existing comment on a pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "parentCommentId", "type": "integer", "desc": "The ID of the parent comment to reply to." },
+      { "name": "text", "type": "string", "desc": "The reply text content." }
+    ]
+  },
+  {
+    "name": "add_pull_request_comment",
+    "description": "Add a new comment to a pull request. Can be a general comment or attached to a specific line in a file.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "text", "type": "string", "desc": "The comment text content." },
+      { "name": "filePath", "type": "string", "desc": "Optional file path to attach the comment to." },
+      { "name": "line", "type": "integer", "desc": "Optional line number (requires filePath)." },
+      { "name": "lineType", "type": "string", "desc": "Line type: ADDED, REMOVED, or CONTEXT (default: ADDED)." },
+      { "name": "fileType", "type": "string", "desc": "File type: FROM (source) or TO (destination). Auto-derived from lineType." }
+    ]
+  },
+  {
+    "name": "get_pull_request_tasks",
+    "description": "List all tasks associated with a pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "state", "type": "string", "desc": "Filter by task state: OPEN, RESOLVED, or ALL (default)." }
+    ]
+  },
+  {
+    "name": "create_pull_request_task",
+    "description": "Create a new task attached to a comment on a pull request.",
+    "arguments": [
+      { "name": "commentId", "type": "integer", "desc": "The ID of the comment to attach the task to." },
+      { "name": "text", "type": "string", "desc": "The task description text." },
+      { "name": "projectKey", "type": "string", "desc": "Optional: Bitbucket project key for validation." },
+      { "name": "repositorySlug", "type": "string", "desc": "Optional: Repository slug for validation." },
+      { "name": "pullRequestId", "type": "integer", "desc": "Optional: Pull request ID for validation." }
+    ]
+  },
+  {
+    "name": "update_pull_request_task",
+    "description": "Update the text of an existing task.",
+    "arguments": [
+      { "name": "taskId", "type": "integer", "desc": "The ID of the task to update." },
+      { "name": "text", "type": "string", "desc": "The new task description text." }
+    ]
+  },
+  {
+    "name": "delete_pull_request_task",
+    "description": "Delete a task from a pull request.",
+    "arguments": [
+      { "name": "taskId", "type": "integer", "desc": "The ID of the task to delete." }
+    ]
+  },
+  {
+    "name": "get_build_status",
+    "description": "Get build status information for a specific commit. Shows CI/CD pipeline results.",
+    "arguments": [
+      { "name": "commitId", "type": "string", "desc": "The full or short commit hash." },
+      { "name": "includeStats", "type": "boolean", "desc": "Include summary statistics (default: true)." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of build results to return (default: 25)." }
+    ]
+  },
+  {
+    "name": "get_pull_request_build_status",
+    "description": "Get build status for the head commit of a pull request.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." }
+    ]
+  },
+  {
+    "name": "list_builds",
+    "description": "List recent builds for a repository. Shows CI/CD pipeline history across commits on a branch.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "branch", "type": "string", "desc": "Branch name to get builds for (default: repository default branch)." },
+      { "name": "limit", "type": "integer", "desc": "Maximum number of commits to check for builds (default: 25, max: 100)." }
+    ]
+  },
+  {
+    "name": "get_pull_request_jira_issues",
+    "description": "Get Jira issues linked to a pull request via commit messages and branch names.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." }
+    ]
+  }
+]
