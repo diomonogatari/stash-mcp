@@ -1,0 +1,36 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore stash-mcp.slnx
+
+      - name: Verify formatting
+        run: dotnet format stash-mcp.slnx --verify-no-changes
+
+      - name: Build
+        run: dotnet build stash-mcp.slnx --no-restore
+
+      - name: Test
+        run: dotnet test stash-mcp.slnx --no-build
