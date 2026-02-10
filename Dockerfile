@@ -38,6 +38,9 @@ WORKDIR /app
 
 COPY --from=build /app .
 
+# Run as non-root for security (UID 1654 is the .NET default non-root user)
+USER $APP_UID
+
 STOPSIGNAL SIGTERM
 
 ENTRYPOINT ["dotnet", "StashMcpServer.dll"]
