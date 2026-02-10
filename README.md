@@ -1,5 +1,12 @@
 # Stash MCP Server
 
+[![CI](https://github.com/diomonogatari/stash-mcp/actions/workflows/build.yml/badge.svg)](https://github.com/diomonogatari/stash-mcp/actions/workflows/build.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/diomonogatari/stash-mcp)](https://hub.docker.com/r/diomonogatari/stash-mcp)
+[![Docker Image Size](https://img.shields.io/docker/image-size/diomonogatari/stash-mcp/latest)](https://hub.docker.com/r/diomonogatari/stash-mcp)
+[![GitHub Release](https://img.shields.io/github/v/release/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/releases)
+[![license](https://img.shields.io/github/license/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/blob/main/LICENSE)
+![](https://img.shields.io/badge/.net-10.0-512BD4)
+
 A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image on [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp). It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
 
 ## Features
@@ -264,6 +271,14 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 - [Architecture](docs/ARCHITECTURE.md) — System design and folder structure
 - [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 40 tools
 - [Changelog](CHANGELOG.md) — Version history and release notes
+
+## Star History
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=diomonogatari/stash-mcp&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=diomonogatari/stash-mcp&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=diomonogatari/stash-mcp&type=Date" />
+</picture>
 
 ## License
 
