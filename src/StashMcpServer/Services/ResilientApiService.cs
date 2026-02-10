@@ -77,12 +77,12 @@ public class ResilientApiService : IResilientApiService
         }
         catch (BrokenCircuitException ex)
         {
-            _logger.LogWarning("Circuit breaker is open for key {CacheKey}. Attempting graceful degradation.", cacheKey);
+            _logger.LogWarning(ex, "Circuit breaker is open for key {CacheKey}. Attempting graceful degradation.", cacheKey);
             return HandleGracefulDegradation<T>(cacheKey, ex);
         }
         catch (TimeoutRejectedException ex)
         {
-            _logger.LogWarning("Request timed out for key {CacheKey}. Attempting graceful degradation.", cacheKey);
+            _logger.LogWarning(ex, "Request timed out for key {CacheKey}. Attempting graceful degradation.", cacheKey);
             return HandleGracefulDegradation<T>(cacheKey, ex);
         }
         catch (BitbucketApiException ex)

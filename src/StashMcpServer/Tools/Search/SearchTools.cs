@@ -4,6 +4,7 @@ using ModelContextProtocol.Server;
 using StashMcpServer.Formatting;
 using StashMcpServer.Services;
 using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -399,7 +400,7 @@ public class SearchTools(
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    Logger.LogDebug("Skipping file {FilePath}: {Error}", filePath, ex.Message);
+                    Logger.LogDebug(ex, "Skipping file {FilePath}", filePath);
                     return (FilePath: filePath, Matches: new List<SearchMatch>(), Success: false);
                 }
                 finally
@@ -506,7 +507,7 @@ public class SearchTools(
 
         if (!string.IsNullOrWhiteSpace(since))
         {
-            if (!DateTimeOffset.TryParse(since, out var parsedSince))
+            if (!DateTimeOffset.TryParse(since, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedSince))
             {
                 return $"Error: Invalid 'since' date format: '{since}'. Use ISO 8601 format (e.g., '2024-01-15').";
             }
@@ -515,7 +516,7 @@ public class SearchTools(
 
         if (!string.IsNullOrWhiteSpace(until))
         {
-            if (!DateTimeOffset.TryParse(until, out var parsedUntil))
+            if (!DateTimeOffset.TryParse(until, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedUntil))
             {
                 return $"Error: Invalid 'until' date format: '{until}'. Use ISO 8601 format (e.g., '2024-12-31').";
             }
@@ -801,7 +802,7 @@ public class SearchTools(
         }
         catch (Flurl.Http.FlurlHttpException ex) when (ex.StatusCode == 403)
         {
-            Logger.LogWarning("User search denied - insufficient permissions");
+            Logger.LogWarning(ex, "User search denied - insufficient permissions");
             return """
                 ❌ **Permission Denied**
 
