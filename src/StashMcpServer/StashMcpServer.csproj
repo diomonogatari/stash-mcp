@@ -26,4 +26,8 @@
     <ProjectReference Include="..\..\lib\Bitbucket.Net\src\Bitbucket.Net\Bitbucket.Net.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Services\ServerInstructions.txt" LogicalName="StashMcpServer.ServerInstructions.txt" />
+  </ItemGroup>
+
 </Project>
