@@ -6,7 +6,7 @@
 [![Docker Image Size](https://img.shields.io/docker/image-size/diomonogatari/stash-mcp/latest)](https://hub.docker.com/r/diomonogatari/stash-mcp)
 [![GitHub Release](https://img.shields.io/github/v/release/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/releases)
 [![license](https://img.shields.io/github/license/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/blob/main/LICENSE)
-![](https://img.shields.io/badge/.net-10.0-512BD4)
+![.NET 10.0](https://img.shields.io/badge/.net-10.0-512BD4)
 
 A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image on [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp). It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
 
@@ -260,7 +260,8 @@ Or pin to a specific version tag (e.g. `diomonogatari/stash-mcp:1.1.0`).
 ### Server unresponsive after startup
 
 - Increase the log level to see what is happening:
-  `--log-level Debug` (CLI) or add `-e LOG_LEVEL=Debug` (Docker)
+  `--log-level Debug` (CLI) or append `--log-level Debug` after the image
+  name in the `docker run` command
 - Check that the `BITBUCKET_PROJECTS` variable (if set) contains
   valid project keys — invalid keys cause the startup cache to fail
   silently

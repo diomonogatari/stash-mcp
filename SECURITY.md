@@ -1,6 +1,6 @@
-## Security Policy
+# Security Policy
 
-### Credential Safety
+## Credential Safety
 
 **Never commit your Bitbucket Personal Access Token (PAT) to source control.**
 
@@ -10,7 +10,7 @@
 - Use `BITBUCKET_READ_ONLY_MODE=true` when write access is not needed
 - Use secure credential storage where available
 
-### Docker Image
+## Docker Image
 
 The published Docker image on
 [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp)
