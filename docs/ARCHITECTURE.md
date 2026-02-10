@@ -6,7 +6,7 @@ This document describes the architecture of the Stash MCP Server, a Model Contex
 
 ```
 src/StashMcpServer/
-├── Program.cs                         # Entry point — dual transport (stdio/HTTP)
+├── Program.cs                         # Entry point — stdio transport
 ├── StashMcpServer.csproj
 │
 ├── Configuration/
@@ -59,7 +59,7 @@ The application follows a layered architecture with clear separation of concerns
 ```
         ┌────────────────────────────────────────┐
         │           MCP Transport Layer           │
-        │   stdio (local)  |  HTTP /mcp (Docker)  │
+        │              stdio (JSON-RPC)            │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
@@ -104,7 +104,14 @@ The application follows a layered architecture with clear separation of concerns
 
 **Interface-Driven Services**: Core services (`IBitbucketCacheService`, `IResilientApiService`, `IServerSettings`, `IDiffFormatter`) are registered as interfaces, enabling unit testing with mocks.
 
-**Dual Transport**: The server supports both `stdio` (for local MCP clients like VS Code) and `HTTP` (for Docker container deployments). Transport is selected via `--transport` CLI argument or `MCP_TRANSPORT` environment variable.
+**Stdio Transport**: The server uses stdio (stdin/stdout) for MCP communication. This is the standard transport for MCP servers running as Docker containers or local processes, used by VS Code, Claude Desktop, and other MCP clients.
+
+**Scoped Startup Caching**: Instead of enumerating all projects and repositories at startup, the cache is scoped to the user's active projects. The resolution order is:
+1. `BITBUCKET_PROJECTS` env var — explicit comma-separated project keys
+2. Project keys derived from the authenticated user's recent repositories
+3. Full enumeration (fallback when no scope can be determined)
+
+Tools that reference non-cached projects fall through gracefully: `NormalizeProjectKey` returns the raw key, and `list_repositories` fetches from the API on cache miss.
 
 **Resilience**: All Bitbucket API calls go through `ResilientApiService`, which wraps each call with:
 - Retry with exponential backoff (configurable, default 3 attempts)
@@ -118,8 +125,7 @@ The application follows a layered architecture with clear separation of concerns
 | Package | Purpose |
 |---------|---------|
 | ModelContextProtocol | MCP server framework (stdio transport) |
-| ModelContextProtocol.AspNetCore | HTTP transport for container deployments |
 | BitbucketServer.Net | Bitbucket Server REST API client |
-| Serilog.AspNetCore | Structured logging |
+| Serilog.Extensions.Logging | Structured logging |
 | Microsoft.Extensions.Resilience | Polly integration for retry/circuit breaker |
 | Meziantou.Analyzer | Code quality analysis |

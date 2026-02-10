@@ -15,7 +15,7 @@ public class ProjectTools(
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "list_projects"), Description("Lists all projects in the Bitbucket Server instance.")]
+    [McpServerTool(Name = "list_projects"), Description("Lists all projects in the Bitbucket Server instance. Results may be scoped to the user's active projects based on BITBUCKET_PROJECTS or recent repository activity.")]
     public Task<string> ListProjectsAsync()
     {
         LogToolInvocation(nameof(ListProjectsAsync));

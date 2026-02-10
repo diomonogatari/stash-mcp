@@ -5,9 +5,10 @@ using System.Collections.Concurrent;
 
 namespace StashMcpServer.Services;
 
-public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCacheService> logger) : IBitbucketCacheService
+public class BitbucketCacheService(BitbucketClient client, IServerSettings serverSettings, ILogger<BitbucketCacheService> logger) : IBitbucketCacheService
 {
     private readonly BitbucketClient _client = client;
+    private readonly IServerSettings _serverSettings = serverSettings;
     private readonly ILogger<BitbucketCacheService> _logger = logger;
 
     // Core cache structures
@@ -28,24 +29,37 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
     // Tier 1: Server capabilities
     private bool _isSearchAvailable;
 
+    // I/O parallelism derived from host hardware.
+    // API calls are I/O-bound, so we use ProcessorCount as the baseline (clamped to a sensible range).
+    // Branch warmup uses a 2× multiplier because each call is a lightweight single-resource GET.
+    private static readonly int IoParallelism = Math.Clamp(Environment.ProcessorCount, 2, 16);
+    private static readonly int BranchWarmupParallelism = Math.Clamp(Environment.ProcessorCount * 2, 4, 32);
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Initializing Bitbucket cache...");
+        _logger.LogInformation("Initializing Bitbucket cache (CPUs: {ProcessorCount}, I/O parallelism: {IoParallelism}, branch warmup: {BranchParallelism})...",
+            Environment.ProcessorCount, IoParallelism, BranchWarmupParallelism);
 
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Phase 1: Lightweight discovery (parallel) — no heavy enumeration
             await Task.WhenAll(
                 InitializeApplicationPropertiesAsync(cancellationToken),
                 InitializeCurrentUserAsync(cancellationToken),
-                InitializeProjectsAndRepositoriesAsync(cancellationToken),
                 InitializeSearchAvailabilityAsync(cancellationToken)).ConfigureAwait(false);
 
             cancellationToken.ThrowIfCancellationRequested();
 
+            // Phase 2: Recent repos (needs CurrentUser from Phase 1)
             await InitializeRecentRepositoriesAsync(cancellationToken).ConfigureAwait(false);
-            await InitializeDefaultBranchesAsync(cancellationToken).ConfigureAwait(false);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Phase 3: Projects & repos — scoped to configured or recently-active projects
+            var targetProjectKeys = ResolveTargetProjectKeys();
+            await InitializeProjectsAndRepositoriesAsync(targetProjectKeys, cancellationToken).ConfigureAwait(false);
 
             LogCacheSummary();
         }
@@ -55,12 +69,47 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
         }
     }
 
+    /// <summary>
+    /// Determines which project keys to cache at startup.
+    /// Priority: BITBUCKET_PROJECTS env var > project keys from recent repositories > empty (full fetch).
+    /// </summary>
+    private IReadOnlyList<string> ResolveTargetProjectKeys()
+    {
+        // Explicit configuration takes priority
+        if (_serverSettings.Projects.Count > 0)
+        {
+            _logger.LogInformation("Using {Count} explicitly configured project(s): {Projects}.",
+                _serverSettings.Projects.Count, string.Join(", ", _serverSettings.Projects));
+            return _serverSettings.Projects;
+        }
+
+        // Derive from recent repositories when available
+        if (_recentRepositories.Count > 0)
+        {
+            var projectKeys = _recentRepositories
+                .Where(r => r.Project?.Key is not null)
+                .Select(r => r.Project!.Key!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (projectKeys.Count > 0)
+            {
+                _logger.LogInformation("Derived {Count} project(s) from recent repositories: {Projects}.",
+                    projectKeys.Count, string.Join(", ", projectKeys));
+                return projectKeys;
+            }
+        }
+
+        _logger.LogInformation("No project scope configured and no recent repositories found. Falling back to full project enumeration.");
+        return [];
+    }
+
     private async Task InitializeApplicationPropertiesAsync(CancellationToken cancellationToken)
     {
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _applicationProperties = await _client.GetApplicationPropertiesAsync().ConfigureAwait(false);
+            _applicationProperties = await _client.GetApplicationPropertiesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Cached application properties (version: {Version}).",
                 _applicationProperties.TryGetValue("version", out var version) ? version : "unknown");
         }
@@ -118,22 +167,19 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
         }
     }
 
-    private async Task InitializeProjectsAndRepositoriesAsync(CancellationToken cancellationToken)
+    private async Task InitializeProjectsAndRepositoriesAsync(IReadOnlyList<string> targetProjectKeys, CancellationToken cancellationToken)
     {
-        // Use streaming API for memory-efficient loading of projects
-        var projectsList = new List<Project>();
-        await foreach (var project in _client.GetProjectsStreamAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
+        if (targetProjectKeys.Count > 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            projectsList.Add(project);
-            _projectLookup[project.Key!] = project;
+            await InitializeScopedProjectsAsync(targetProjectKeys, cancellationToken).ConfigureAwait(false);
         }
-        _projects = projectsList;
+        else
+        {
+            await InitializeAllProjectsAsync(cancellationToken).ConfigureAwait(false);
+        }
 
-        _logger.LogInformation("Cached {Count} projects.", _projects.Count);
-
-        // Use streaming API for memory-efficient loading of repositories per project
-        await Parallel.ForEachAsync(_projects, new ParallelOptions { MaxDegreeOfParallelism = 5, CancellationToken = cancellationToken }, async (project, ct) =>
+        // Fetch repositories for all cached projects
+        await Parallel.ForEachAsync(_projects, new ParallelOptions { MaxDegreeOfParallelism = IoParallelism, CancellationToken = cancellationToken }, async (project, ct) =>
         {
             try
             {
@@ -146,12 +192,56 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to cache repositories for project {ProjectKey}", project.Key);
+                _logger.LogWarning(ex, "Failed to cache repositories for project {ProjectKey}.", project.Key);
             }
         });
 
         var totalRepos = _projectRepositories.Values.Sum(r => r.Count);
         _logger.LogInformation("Cached {RepositoryCount} repositories across {ProjectCount} projects.", totalRepos, _projects.Count);
+    }
+
+    /// <summary>
+    /// Fetches only the specified projects by key, tolerating missing projects.
+    /// </summary>
+    private async Task InitializeScopedProjectsAsync(IReadOnlyList<string> projectKeys, CancellationToken cancellationToken)
+    {
+        var projectsList = new List<Project>();
+
+        await Parallel.ForEachAsync(projectKeys, new ParallelOptions { MaxDegreeOfParallelism = IoParallelism, CancellationToken = cancellationToken }, async (key, ct) =>
+        {
+            try
+            {
+                var project = await _client.GetProjectAsync(key, ct).ConfigureAwait(false);
+                lock (projectsList)
+                {
+                    projectsList.Add(project);
+                }
+                _projectLookup[project.Key!] = project;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to fetch project {ProjectKey}. It may not exist or you lack permission.", key);
+            }
+        });
+
+        _projects = projectsList;
+        _logger.LogInformation("Cached {Count} scoped projects.", _projects.Count);
+    }
+
+    /// <summary>
+    /// Full enumeration of all projects (fallback when no scope is configured).
+    /// </summary>
+    private async Task InitializeAllProjectsAsync(CancellationToken cancellationToken)
+    {
+        var projectsList = new List<Project>();
+        await foreach (var project in _client.GetProjectsStreamAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            projectsList.Add(project);
+            _projectLookup[project.Key!] = project;
+        }
+        _projects = projectsList;
+        _logger.LogInformation("Cached {Count} projects (full enumeration).", _projects.Count);
     }
 
     private async Task InitializeDefaultBranchesAsync(CancellationToken cancellationToken)
@@ -160,9 +250,9 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
             .SelectMany(kvp => kvp.Value.Select(r => (ProjectKey: kvp.Key, Repository: r)))
             .ToList();
 
-        _logger.LogInformation("Fetching default branches for {Count} repositories...", allRepositories.Count);
+        _logger.LogInformation("Background warmup: fetching default branches for {Count} repositories...", allRepositories.Count);
 
-        await Parallel.ForEachAsync(allRepositories, new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = cancellationToken }, async (item, ct) =>
+        await Parallel.ForEachAsync(allRepositories, new ParallelOptions { MaxDegreeOfParallelism = BranchWarmupParallelism, CancellationToken = cancellationToken }, async (item, ct) =>
         {
             try
             {
@@ -180,8 +270,15 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
             }
         });
 
-        _logger.LogInformation("Cached {Count} default branches.", _defaultBranches.Count);
+        _logger.LogInformation("Background warmup complete: cached {Count} default branches.", _defaultBranches.Count);
     }
+
+    /// <summary>
+    /// Pre-populates the default branch cache for all known repositories.
+    /// Runs in the background and does not block server readiness.
+    /// </summary>
+    public Task WarmupDefaultBranchesAsync(CancellationToken cancellationToken = default) =>
+        InitializeDefaultBranchesAsync(cancellationToken);
 
     private async Task InitializeSearchAvailabilityAsync(CancellationToken cancellationToken)
     {
@@ -201,10 +298,9 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
     private void LogCacheSummary()
     {
         _logger.LogInformation(
-            "Cache initialization complete. Projects: {Projects}, Repositories: {Repos}, Default Branches: {Branches}, Recent Repos: {Recent}, Search: {Search}",
+            "Cache initialization complete. Projects: {Projects}, Repositories: {Repos}, Recent Repos: {Recent}, Search: {Search}. Default branches will load in background.",
             _projects.Count,
             _projectRepositories.Values.Sum(r => r.Count),
-            _defaultBranches.Count,
             _recentRepositories.Count,
             _isSearchAvailable ? "available" : "unavailable");
     }
@@ -284,21 +380,42 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
 
     #region Public Accessors - Default Branches (Tier 1)
 
-    public Branch? GetDefaultBranch(string projectKey, string repositorySlug)
+    /// <summary>
+    /// Gets the default branch for a repository. If not yet cached, fetches it from the API.
+    /// </summary>
+    public async ValueTask<Branch?> GetDefaultBranchAsync(string projectKey, string repositorySlug, CancellationToken cancellationToken = default)
     {
         var key = BuildRepositoryKey(projectKey, repositorySlug);
-        _defaultBranches.TryGetValue(key, out var branch);
-        return branch;
+        if (_defaultBranches.TryGetValue(key, out var branch))
+        {
+            return branch;
+        }
+
+        try
+        {
+            var fetched = await _client.GetDefaultBranchAsync(projectKey, repositorySlug).ConfigureAwait(false);
+            if (fetched is not null)
+            {
+                _defaultBranches[key] = fetched;
+            }
+            return fetched;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to fetch default branch for {ProjectKey}/{RepoSlug}", projectKey, repositorySlug);
+            return null;
+        }
     }
 
-    public string? GetDefaultBranchName(string projectKey, string repositorySlug)
+    public async ValueTask<string?> GetDefaultBranchNameAsync(string projectKey, string repositorySlug, CancellationToken cancellationToken = default)
     {
-        return GetDefaultBranch(projectKey, repositorySlug)?.DisplayId;
+        var branch = await GetDefaultBranchAsync(projectKey, repositorySlug, cancellationToken).ConfigureAwait(false);
+        return branch?.DisplayId;
     }
 
-    public string GetDefaultBranchRef(string projectKey, string repositorySlug, string fallback = "refs/heads/master")
+    public async ValueTask<string> GetDefaultBranchRefAsync(string projectKey, string repositorySlug, string fallback = "refs/heads/master", CancellationToken cancellationToken = default)
     {
-        var branch = GetDefaultBranch(projectKey, repositorySlug);
+        var branch = await GetDefaultBranchAsync(projectKey, repositorySlug, cancellationToken).ConfigureAwait(false);
         return branch?.Id ?? fallback;
     }
 

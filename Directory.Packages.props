@@ -7,7 +7,6 @@
   <ItemGroup>
     <!-- MCP SDK -->
     <PackageVersion Include="ModelContextProtocol" Version="0.4.0-preview.3" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="0.4.0-preview.3" />
 
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
@@ -17,7 +16,7 @@
     <PackageVersion Include="Microsoft.Extensions.Resilience" Version="10.0.0" />
 
     <!-- Logging -->
-    <PackageVersion Include="Serilog.AspNetCore" Version="8.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
 
     <!-- Analyzers -->

@@ -1,4 +1,5 @@
 using StashMcpServer.Services;
+using System.Collections.Immutable;
 
 namespace StashMcpServer.Configuration;
 
@@ -14,6 +15,12 @@ public class ServerSettings : IServerSettings
     public bool ReadOnlyMode { get; init; }
 
     /// <summary>
+    /// Optional list of project keys to scope startup caching to.
+    /// When empty, the server derives target projects from the user's recent repositories.
+    /// </summary>
+    public IReadOnlyList<string> Projects { get; init; } = [];
+
+    /// <summary>
     /// Creates settings from environment variables.
     /// </summary>
     public static ServerSettings FromEnvironment()
@@ -22,7 +29,23 @@ public class ServerSettings : IServerSettings
         var readOnlyMode = string.Equals(readOnlyEnv, "true", StringComparison.OrdinalIgnoreCase) ||
                           string.Equals(readOnlyEnv, "1", StringComparison.Ordinal);
 
-        return new ServerSettings { ReadOnlyMode = readOnlyMode };
+        var projects = ParseProjectKeys(Environment.GetEnvironmentVariable("BITBUCKET_PROJECTS"));
+
+        return new ServerSettings { ReadOnlyMode = readOnlyMode, Projects = projects };
+    }
+
+    private static ImmutableList<string> ParseProjectKeys(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        return value
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(k => k.ToUpperInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToImmutableList();
     }
 
     /// <summary>

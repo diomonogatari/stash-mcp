@@ -89,6 +89,7 @@ Pass additional environment variables to tune resilience and caching behaviour:
         "-e", "BITBUCKET_CIRCUIT_TIMEOUT",
         "-e", "BITBUCKET_CACHE_TTL_SECONDS",
         "-e", "BITBUCKET_READ_ONLY_MODE",
+        "-e", "BITBUCKET_PROJECTS",
         "mcp/stash-mcp"
       ],
       "env": {
@@ -97,7 +98,8 @@ Pass additional environment variables to tune resilience and caching behaviour:
         "BITBUCKET_RETRY_COUNT": "5",
         "BITBUCKET_CIRCUIT_TIMEOUT": "60",
         "BITBUCKET_CACHE_TTL_SECONDS": "120",
-        "BITBUCKET_READ_ONLY_MODE": "false"
+        "BITBUCKET_READ_ONLY_MODE": "false",
+        "BITBUCKET_PROJECTS": "PROJ,TEAM"
       },
       "type": "stdio"
     }
@@ -115,31 +117,7 @@ Pass additional environment variables to tune resilience and caching behaviour:
 | Circuit Timeout | `BITBUCKET_CIRCUIT_TIMEOUT` | 30 | Circuit breaker duration in seconds (5–300) |
 | Cache TTL | `BITBUCKET_CACHE_TTL_SECONDS` | 60 | Cache time-to-live in seconds (10–600) |
 | Read-Only Mode | `BITBUCKET_READ_ONLY_MODE` | false | Disable write operations (`true` or `1`) |
-
-## Docker — HTTP Transport
-
-For standalone or server-side deployments (CI pipelines, shared infrastructure), the container can run as a long-lived HTTP service instead of stdio:
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -e BITBUCKET_URL=https://your-stash-server.com/ \
-  -e BITBUCKET_TOKEN=your_personal_access_token \
-  ghcr.io/diomonogatari/stash-mcp:latest
-```
-
-Then point your MCP client at the HTTP endpoint:
-
-```json
-{
-  "servers": {
-    "stash-bitbucket": {
-      "type": "http",
-      "url": "http://localhost:8080/"
-    }
-  }
-}
-```
+| Projects | `BITBUCKET_PROJECTS` | — | Comma-separated project keys to cache at startup (e.g. `PROJ,TEAM`). When omitted, derives scope from recent repositories. |
 
 ## Tool Reference
 
@@ -208,13 +186,8 @@ dotnet test stash-mcp.slnx
 ### Running Locally
 
 ```bash
-# stdio mode (default — for local MCP clients)
 dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
   --stash-url https://your-server.com/ --pat your_pat
-
-# HTTP mode (for local Docker testing)
-dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
-  --stash-url https://your-server.com/ --pat your_pat --transport http
 ```
 
 > The double dash (`--`) separates `dotnet run` arguments from application arguments.
@@ -223,7 +196,7 @@ dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
 
 ```bash
 docker build -t stash-mcp .
-docker run -d -p 8080:8080 \
+docker run -i --rm \
   -e BITBUCKET_URL=https://your-stash-server.com/ \
   -e BITBUCKET_TOKEN=your_personal_access_token \
   stash-mcp
@@ -259,7 +232,7 @@ docker run -d -p 8080:8080 \
 │  │ (Static)         │ │ ConcurrentDict (projects)   │    │
 │  └──────────┬──────┘ └──────────────────────────────┘    │
 │             │                                            │
-│  Transport: stdio (local) | HTTP (Docker / remote)       │
+│  Transport: stdio                                        │
 └─────────────┼────────────────────────────────────────────┘
               │
               ▼

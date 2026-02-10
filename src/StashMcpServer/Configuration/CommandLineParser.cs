@@ -10,7 +10,7 @@ public static class CommandLineParser
     /// <summary>
     /// Parses command-line arguments, falling back to environment variable defaults.
     /// </summary>
-    public static (string? StashUrl, string? Pat, LogEventLevel LogLevel, string Transport) ParseArguments(
+    public static (string? StashUrl, string? Pat, LogEventLevel LogLevel) ParseArguments(
         string[] args,
         string? defaultStashUrl,
         string? defaultPat)
@@ -18,7 +18,6 @@ public static class CommandLineParser
         var stashUrl = defaultStashUrl;
         var pat = defaultPat;
         var logLevel = LogEventLevel.Information;
-        var transport = Environment.GetEnvironmentVariable("MCP_TRANSPORT") ?? "stdio";
 
         var index = 0;
         while (index < args.Length)
@@ -48,16 +47,12 @@ public static class CommandLineParser
 
                     index += 2;
                     continue;
-                case "--transport" when index + 1 < args.Length:
-                    transport = args[index + 1];
-                    index += 2;
-                    continue;
             }
 
             index++;
         }
 
-        return (stashUrl, pat, logLevel, transport.ToLowerInvariant());
+        return (stashUrl, pat, logLevel);
     }
 
     /// <summary>

@@ -26,7 +26,7 @@ RUN dotnet publish src/StashMcpServer/StashMcpServer.csproj \
     --no-restore
 
 # Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
 
 LABEL org.opencontainers.image.title="Stash MCP Server" \
       org.opencontainers.image.description="MCP server for Bitbucket Server (Stash) — 40 tools for repositories, PRs, code review, builds, and search" \
@@ -38,11 +38,6 @@ WORKDIR /app
 
 COPY --from=build /app .
 
-# Default port for HTTP transport
-EXPOSE 8080
+STOPSIGNAL SIGTERM
 
-# Default to HTTP transport for container deployments
-ENV MCP_TRANSPORT=http
-ENV ASPNETCORE_URLS=http://+:8080
-
-ENTRYPOINT ["dotnet", "StashMcpServer.dll", "--transport", "http"]
+ENTRYPOINT ["dotnet", "StashMcpServer.dll"]

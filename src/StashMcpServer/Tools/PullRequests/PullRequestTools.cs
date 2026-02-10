@@ -938,7 +938,7 @@ public class PullRequestTools(
         var effectiveTargetRef = targetRef;
         if (string.IsNullOrWhiteSpace(effectiveTargetRef))
         {
-            effectiveTargetRef = CacheService.GetDefaultBranchRef(normalizedProjectKey, normalizedSlug);
+            effectiveTargetRef = await CacheService.GetDefaultBranchRefAsync(normalizedProjectKey, normalizedSlug, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         var toRefId = ToolHelpers.NormalizeRef(effectiveTargetRef);

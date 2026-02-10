@@ -69,37 +69,22 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Configures Serilog logging with optional MCP transport bridge.
-    /// The MCP log dispatcher is only registered for stdio transport where McpServer is a singleton.
-    /// In HTTP transport mode, McpServer is scoped per-session and not available at startup.
+    /// Configures Serilog logging with MCP transport bridge.
+    /// Logs are routed through McpSerilogSink → McpLogQueue → McpLogDispatcher → MCP client.
     /// </summary>
     public static IServiceCollection AddMcpLogging(
         this IServiceCollection services,
-        LogEventLevel logLevel,
-        bool enableMcpLogDispatcher = true)
+        LogEventLevel logLevel)
     {
         var logQueue = new McpLogQueue();
         services.AddSingleton(logQueue);
+        services.AddHostedService<McpLogDispatcher>();
 
-        if (enableMcpLogDispatcher)
-        {
-            services.AddHostedService<McpLogDispatcher>();
-        }
-
-        var logConfig = new LoggerConfiguration()
+        Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Is(logLevel)
             .Enrich.FromLogContext()
-            .WriteTo.Async(writeTo => writeTo.Sink(new McpSerilogSink(logQueue)));
-
-        if (!enableMcpLogDispatcher)
-        {
-            // In HTTP mode, MCP log dispatcher is not available — write to console
-            // so that Docker logs (docker logs <container>) show meaningful output.
-            logConfig.WriteTo.Console(
-                outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
-        }
-
-        Log.Logger = logConfig.CreateLogger();
+            .WriteTo.Async(writeTo => writeTo.Sink(new McpSerilogSink(logQueue)))
+            .CreateLogger();
 
         return services;
     }
