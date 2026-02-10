@@ -1,6 +1,6 @@
 # Stash MCP Server
 
-A Model Context Protocol (MCP) server implementation for Atlassian Stash/Bitbucket Server, enabling AI assistants to interact with your repositories, pull requests, and code review workflows.
+A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image. It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
 
 ## Features
 
@@ -20,65 +20,105 @@ A Model Context Protocol (MCP) server implementation for Atlassian Stash/Bitbuck
 | **Builds** | 3 | CI/CD status per commit/PR/repo |
 | **Integrations** | 1 | Jira issue links |
 
-### ⭐ Workflow-Optimized Tools
+### Workflow-Optimized Tools
 
 These tools reduce multiple API calls to a single invocation:
 
-- `get_pull_request_context` - Complete PR with comments, tasks, diff, activity
-- `get_repository_overview` - Branches, tags, and open PRs in one call
-- `get_commit_context` - Commit details with changes and diff
+- `get_pull_request_context` — Complete PR with comments, tasks, diff, activity
+- `get_repository_overview` — Branches, tags, and open PRs in one call
+- `get_commit_context` — Commit details with changes and diff
 
-### Resilience Features
+### Resilience
 
-- **Circuit Breaker**: Prevents cascading failures when Bitbucket is unavailable
-- **Retry with Backoff**: Automatic retry for transient errors (429, 502, 503, 504)
-- **Graceful Degradation**: Returns cached data when API fails
-- **Response Truncation**: 50KB limit prevents context overflow
-- **Cache Invalidation**: Write operations automatically refresh related caches
+- **Circuit Breaker** — Prevents cascading failures when Bitbucket is unavailable
+- **Retry with Backoff** — Automatic retry for transient errors (429, 502, 503, 504)
+- **Graceful Degradation** — Returns cached data when the API fails
+- **Response Truncation** — 50 KB limit prevents context overflow
+- **Cache Invalidation** — Write operations automatically refresh related caches
 
 ## Getting Started
 
 ### Prerequisites
 
-- .NET 10.0 SDK (or use pre-built executable)
-- Bitbucket Server instance (self-hosted)
-- Personal Access Token with repository read/write permissions
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed
+- A Bitbucket Server (self-hosted) instance
+- A Personal Access Token with repository read/write permissions
 
-### Configuration
+### VS Code / Copilot — MCP Configuration
 
-The server can be configured via command-line arguments or environment variables (see [Configuration Reference](#configuration-reference) for full details):
+Add the following to your VS Code MCP configuration file
+(Command Palette → `MCP: Open user configuration`):
 
-| Parameter | Environment Variable | Description |
-|-----------|---------------------|-------------|
-| `--stash-url` | `BITBUCKET_URL` | Bitbucket Server base URL (required) |
-| `--pat` | `BITBUCKET_TOKEN` | Personal Access Token (required) |
-| `--log-level` | - | Logging level: Verbose, Debug, Information (default), Warning, Error |
-| `--transport` | `MCP_TRANSPORT` | Transport mode: `stdio` (default) or `http` |
-
-### Running the Server
-
-**Using command-line arguments:**
-
-```bash
-StashMcpServer.exe --stash-url https://your-stash-server.com/ --pat your_personal_access_token
+```json
+{
+  "servers": {
+    "stash-bitbucket": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "BITBUCKET_URL",
+        "-e", "BITBUCKET_TOKEN",
+        "mcp/stash-mcp"
+      ],
+      "env": {
+        "BITBUCKET_URL": "https://your-stash-server.com/",
+        "BITBUCKET_TOKEN": "your_personal_access_token"
+      },
+      "type": "stdio"
+    }
+  }
+}
 ```
 
-**Using environment variables:**
+That's it. VS Code will pull the image on first use and start the server automatically.
 
-```bash
-# Set environment variables
-export BITBUCKET_URL=https://your-stash-server.com/
-export BITBUCKET_TOKEN=your_personal_access_token
+### Advanced Configuration
 
-# Run without arguments
-StashMcpServer.exe
+Pass additional environment variables to tune resilience and caching behaviour:
+
+```json
+{
+  "servers": {
+    "stash-bitbucket": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "BITBUCKET_URL",
+        "-e", "BITBUCKET_TOKEN",
+        "-e", "BITBUCKET_RETRY_COUNT",
+        "-e", "BITBUCKET_CIRCUIT_TIMEOUT",
+        "-e", "BITBUCKET_CACHE_TTL_SECONDS",
+        "-e", "BITBUCKET_READ_ONLY_MODE",
+        "mcp/stash-mcp"
+      ],
+      "env": {
+        "BITBUCKET_URL": "https://your-stash-server.com/",
+        "BITBUCKET_TOKEN": "your_personal_access_token",
+        "BITBUCKET_RETRY_COUNT": "5",
+        "BITBUCKET_CIRCUIT_TIMEOUT": "60",
+        "BITBUCKET_CACHE_TTL_SECONDS": "120",
+        "BITBUCKET_READ_ONLY_MODE": "false"
+      },
+      "type": "stdio"
+    }
+  }
+}
 ```
 
-## Docker
+### Configuration Reference
 
-The server supports HTTP transport for container deployments. When running in Docker, the server exposes an HTTP endpoint at `/` instead of using stdio.
+| Setting | Environment Variable | Default | Description |
+|---------|---------------------|---------|-------------|
+| Server URL | `BITBUCKET_URL` | — | Bitbucket Server base URL (**required**) |
+| Access Token | `BITBUCKET_TOKEN` | — | Personal Access Token (**required**) |
+| Retry Count | `BITBUCKET_RETRY_COUNT` | 3 | Max retry attempts (0–10) |
+| Circuit Timeout | `BITBUCKET_CIRCUIT_TIMEOUT` | 30 | Circuit breaker duration in seconds (5–300) |
+| Cache TTL | `BITBUCKET_CACHE_TTL_SECONDS` | 60 | Cache time-to-live in seconds (10–600) |
+| Read-Only Mode | `BITBUCKET_READ_ONLY_MODE` | false | Disable write operations (`true` or `1`) |
 
-### Quick Start
+## Docker — HTTP Transport
+
+For standalone or server-side deployments (CI pipelines, shared infrastructure), the container can run as a long-lived HTTP service instead of stdio:
 
 ```bash
 docker run -d \
@@ -88,19 +128,7 @@ docker run -d \
   ghcr.io/diomonogatari/stash-mcp:latest
 ```
 
-### Building Locally
-
-```bash
-docker build -t stash-mcp .
-docker run -d -p 8080:8080 \
-  -e BITBUCKET_URL=https://your-stash-server.com/ \
-  -e BITBUCKET_TOKEN=your_personal_access_token \
-  stash-mcp
-```
-
-### MCP Configuration (HTTP Transport)
-
-When using the Docker container, configure your MCP client to connect via HTTP:
+Then point your MCP client at the HTTP endpoint:
 
 ```json
 {
@@ -113,112 +141,6 @@ When using the Docker container, configure your MCP client to connect via HTTP:
 }
 ```
 
-### Environment Variables for Docker
-
-All [configuration settings](#configuration-reference) work as environment variables in Docker:
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -e BITBUCKET_URL=https://your-stash-server.com/ \
-  -e BITBUCKET_TOKEN=your_personal_access_token \
-  -e BITBUCKET_RETRY_COUNT=5 \
-  -e BITBUCKET_CIRCUIT_TIMEOUT=60 \
-  -e BITBUCKET_CACHE_TTL_SECONDS=120 \
-  -e BITBUCKET_READ_ONLY_MODE=false \
-  ghcr.io/diomonogatari/stash-mcp:latest
-```
-
-## VS Code Integration
-
-### Pre-built Executable
-
-You can find `StashMcpServer.exe` in the `./artifacts` folder, or build it yourself using the task `build release StashMcpServer`.
-
-### MCP Configuration
-
-Add the following to your VS Code `mcp.json` (open via Command Palette: `MCP: Open user configuration`).
-
-#### Option 1: Using Command-Line Arguments (stdio)
-
-Best for simple configurations where you only need the required parameters:
-
-```json
-{
-  "servers": {
-    "stash-bitbucket": {
-      "type": "stdio",
-      "command": "c:\\path\\to\\StashMcpServer.exe",
-      "args": [
-        "--stash-url", "https://your-stash-server.com/",
-        "--pat", "your_personal_access_token",
-        "--log-level", "Information"
-      ]
-    }
-  }
-}
-```
-
-#### Option 2: Using Environment Variables
-
-Best when you want to configure resilience settings or keep credentials separate:
-
-```json
-{
-  "servers": {
-    "stash-bitbucket": {
-      "type": "stdio",
-      "command": "c:\\path\\to\\StashMcpServer.exe",
-      "env": {
-        "BITBUCKET_URL": "https://your-stash-server.com/",
-        "BITBUCKET_TOKEN": "your_personal_access_token"
-      }
-    }
-  }
-}
-```
-
-#### Option 3: Mixed Configuration (Recommended)
-
-Combine args for basic settings and env for advanced tuning:
-
-```json
-{
-  "servers": {
-    "stash-bitbucket": {
-      "type": "stdio",
-      "command": "c:\\path\\to\\StashMcpServer.exe",
-      "args": [
-        "--stash-url", "https://your-stash-server.com/",
-        "--pat", "your_personal_access_token",
-        "--log-level", "Debug"
-      ],
-      "env": {
-        "BITBUCKET_RETRY_COUNT": "5",
-        "BITBUCKET_CIRCUIT_TIMEOUT": "60",
-        "BITBUCKET_CACHE_TTL_SECONDS": "120",
-        "BITBUCKET_READ_ONLY_MODE": "false"
-      }
-    }
-  }
-}
-```
-
-#### Configuration Reference
-
-| Setting | Arg | Env Variable | Default | Description |
-|---------|-----|--------------|---------|-------------|
-| Server URL | `--stash-url` | `BITBUCKET_URL` | - | Bitbucket Server base URL (required) |
-| Access Token | `--pat` | `BITBUCKET_TOKEN` | - | Personal Access Token (required) |
-| Log Level | `--log-level` | - | Information | Verbose, Debug, Information, Warning, Error |
-| Transport | `--transport` | `MCP_TRANSPORT` | stdio | Transport mode: `stdio` or `http` |
-| Retry Count | - | `BITBUCKET_RETRY_COUNT` | 3 | Max retry attempts (0-10) |
-| Circuit Timeout | - | `BITBUCKET_CIRCUIT_TIMEOUT` | 30 | Circuit breaker duration in seconds (5-300) |
-| Cache TTL | - | `BITBUCKET_CACHE_TTL_SECONDS` | 60 | Cache time-to-live in seconds (10-600) |
-| Read-Only Mode | - | `BITBUCKET_READ_ONLY_MODE` | false | Disable write operations (`true` or `1`) |
-
-> **Note**: Command-line arguments take precedence over environment variables for settings that support both.
-
 ## Tool Reference
 
 For detailed documentation of all 40 tools, see [docs/TOOLSET.md](docs/TOOLSET.md).
@@ -226,7 +148,8 @@ For detailed documentation of all 40 tools, see [docs/TOOLSET.md](docs/TOOLSET.m
 ### Common Workflows
 
 #### Code Review
-```
+
+```text
 1. get_pull_request_context (with includeComments=true, includeDiff=true)
 2. Review the diff and existing comments
 3. add_pull_request_comment (for feedback)
@@ -235,14 +158,16 @@ For detailed documentation of all 40 tools, see [docs/TOOLSET.md](docs/TOOLSET.m
 ```
 
 #### Bug Investigation
-```
+
+```text
 1. search_commits (messageContains="JIRA-123")
 2. get_commit_context (includeDiff=true)
 3. search_code (to find current implementation)
 ```
 
 #### Repository Exploration
-```
+
+```text
 1. get_repository_overview (quick overview)
 2. list_files (browse structure)
 3. get_file_content (read specific files)
@@ -251,11 +176,12 @@ For detailed documentation of all 40 tools, see [docs/TOOLSET.md](docs/TOOLSET.m
 ### Output Optimization
 
 For list operations, use `minimalOutput=true` to reduce response size:
-- `list_repositories` - Returns repository slugs only
-- `list_branches` - Returns branch names only
-- `list_pull_requests` - Returns compact PR summary
 
-## Local Development
+- `list_repositories` — Returns repository slugs only
+- `list_branches` — Returns branch names only
+- `list_pull_requests` — Returns compact PR summary
+
+## Contributing
 
 ### Setup
 
@@ -263,12 +189,11 @@ For list operations, use `minimalOutput=true` to reduce response size:
    ```bash
    git clone --recurse-submodules https://github.com/diomonogatari/stash-mcp.git
    ```
-   If you already cloned without submodules, initialize them:
+   If you already cloned without submodules:
    ```bash
    git submodule update --init --recursive
    ```
-2. Ensure you have the .NET 10.0 SDK installed
-3. Configure your Bitbucket credentials via environment variables or command-line arguments
+2. Install the [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
 
 ### Building
 
@@ -278,55 +203,63 @@ dotnet build stash-mcp.slnx
 
 # Run tests
 dotnet test stash-mcp.slnx
-
-# Run the server (stdio mode)
-dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- --stash-url https://your-server.com/ --pat your_pat
-
-# Run the server (HTTP mode for local Docker testing)
-dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- --stash-url https://your-server.com/ --pat your_pat --transport http
 ```
 
-Note the double dash (`--`) that separates dotnet run arguments from application arguments.
-
-### Build Release
+### Running Locally
 
 ```bash
-dotnet publish src/StashMcpServer/StashMcpServer.csproj --configuration Release --output ./artifacts --self-contained true /p:PublishSingleFile=true
+# stdio mode (default — for local MCP clients)
+dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
+  --stash-url https://your-server.com/ --pat your_pat
+
+# HTTP mode (for local Docker testing)
+dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
+  --stash-url https://your-server.com/ --pat your_pat --transport http
 ```
 
-Or use the VS Code task: `build release StashMcpServer`
+> The double dash (`--`) separates `dotnet run` arguments from application arguments.
+
+### Building the Docker Image
+
+```bash
+docker build -t stash-mcp .
+docker run -d -p 8080:8080 \
+  -e BITBUCKET_URL=https://your-stash-server.com/ \
+  -e BITBUCKET_TOKEN=your_personal_access_token \
+  stash-mcp
+```
 
 ## Architecture
 
-```
+```text
 ┌──────────────────────────────────────────────────────────┐
 │                      MCP Server Layer                    │
 │  ┌──────────────────────────────────────────────────┐    │
 │  │ Domain Tool Classes (9 classes, 40 tools)        │    │
-│  │  ProjectTools  RepositoryTools  PullRequestTools  │    │
-│  │  SearchTools   GitTools   HistoryTools            │    │
-│  │  BuildTools    DashboardTools  IntegrationTools    │    │
+│  │  ProjectTools  RepositoryTools  PullRequestTools │    │
+│  │  SearchTools   GitTools   HistoryTools           │    │
+│  │  BuildTools    DashboardTools  IntegrationTools  │    │
 │  └──────────┬───────────────────────────────────────┘    │
-│             │ inherits ToolBase (shared helpers)          │
+│             │ inherits ToolBase (shared helpers)         │
 │  ┌──────────▼───────────────────────────────────────┐    │
-│  │ Formatting  │  DiffFormatter  ResponseTruncation  │    │
-│  │             │  MinimalOutputFormatter (50KB limit) │    │
+│  │ Formatting  │ DiffFormatter  ResponseTruncation  │    │
+│  │             │ MinimalOutputFormatter (50KB limit)│    │
 │  └──────────┬───────────────────────────────────────┘    │
 │             │                                            │
 │  ┌──────────▼───────────────────────────────────────┐    │
-│  │           ResilientApiService                     │    │
-│  │  • Circuit Breaker (Polly)                        │    │
-│  │  • Retry with Exponential Backoff                 │    │
-│  │  • Graceful Degradation (stale cache)             │    │
-│  │  • Cache Invalidation on Writes                   │    │
+│  │           ResilientApiService                    │    │
+│  │  • Circuit Breaker (Polly)                       │    │
+│  │  • Retry with Exponential Backoff                │    │
+│  │  • Graceful Degradation (stale cache)            │    │
+│  │  • Cache Invalidation on Writes                  │    │
 │  └──────────┬───────────────────────────────────────┘    │
 │             │                                            │
 │  ┌──────────▼──────┐ ┌──────────────────────────────┐    │
-│  │ Cache Layer      │ │ IMemoryCache (TTL=60s)       │    │
-│  │ (Static)         │ │ ConcurrentDict (projects)    │    │
+│  │ Cache Layer      │ │ IMemoryCache (TTL=60s)      │    │
+│  │ (Static)         │ │ ConcurrentDict (projects)   │    │
 │  └──────────┬──────┘ └──────────────────────────────┘    │
 │             │                                            │
-│  Transport: stdio (local) | HTTP /mcp (Docker)           │
+│  Transport: stdio (local) | HTTP (Docker / remote)       │
 └─────────────┼────────────────────────────────────────────┘
               │
               ▼
@@ -335,20 +268,19 @@ Or use the VS Code task: `build release StashMcpServer`
 
 For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-## Security Note
+## Security
 
-⚠️ **Never commit your Personal Access Token to source control.**
+**Never commit your Personal Access Token to source control.**
 
-Consider:
-- Using environment variables
-- Using secure credential storage
-- Restricting PAT permissions to minimum required scopes
+- Use environment variables (as shown in the configuration examples above)
+- Restrict PAT permissions to the minimum required scopes
+- Use secure credential storage where available
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) - System design and folder structure
-- [Tool Reference](docs/TOOLSET.md) - Detailed documentation for all 40 tools
-- [Changelog](CHANGELOG.md) - Version history and release notes
+- [Architecture](docs/ARCHITECTURE.md) — System design and folder structure
+- [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 40 tools
+- [Changelog](CHANGELOG.md) — Version history and release notes
 
 ## License
 
