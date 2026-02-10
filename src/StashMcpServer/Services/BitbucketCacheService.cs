@@ -15,6 +15,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
     private List<Project> _projects = [];
     private readonly ConcurrentDictionary<string, Project> _projectLookup = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, List<Repository>> _projectRepositories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Repository> _repositoryLookup = new(StringComparer.OrdinalIgnoreCase);
 
     // Tier 1: User context cache
     private User? _currentUser;
@@ -339,17 +340,21 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
             return null;
         }
 
-        if (_projectRepositories.TryGetValue(projectKey, out var repos))
-        {
-            return repos.FirstOrDefault(r => string.Equals(r.Slug, repositorySlug, StringComparison.OrdinalIgnoreCase));
-        }
-
-        return null;
+        var key = BuildRepositoryKey(projectKey, repositorySlug);
+        _repositoryLookup.TryGetValue(key, out var repo);
+        return repo;
     }
 
     public void StoreRepositories(string projectKey, IEnumerable<Repository> repositories)
     {
-        _projectRepositories[projectKey] = repositories?.ToList() ?? [];
+        var repoList = repositories?.ToList() ?? [];
+        _projectRepositories[projectKey] = repoList;
+
+        foreach (var repo in repoList.Where(r => !string.IsNullOrEmpty(r.Slug)))
+        {
+            var key = BuildRepositoryKey(projectKey, repo.Slug!);
+            _repositoryLookup[key] = repo;
+        }
     }
 
     #endregion
