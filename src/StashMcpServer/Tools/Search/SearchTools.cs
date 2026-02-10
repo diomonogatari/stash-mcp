@@ -31,21 +31,6 @@ public class SearchTools(
     private const int DefaultUserSearchLimit = 25;
     private const int MaxUserSearchLimit = 100;
 
-    /// <summary>
-    /// Binary file extensions to skip during search.
-    /// </summary>
-    private static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".dll", ".exe", ".bin", ".obj", ".o", ".so", ".dylib",
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg", ".webp",
-        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
-        ".zip", ".tar", ".gz", ".rar", ".7z", ".jar", ".war", ".ear",
-        ".mp3", ".mp4", ".wav", ".avi", ".mov", ".mkv",
-        ".woff", ".woff2", ".ttf", ".eot", ".otf",
-        ".class", ".pyc", ".pdb", ".nupkg", ".snupkg",
-        ".lock", ".min.js", ".min.css", ".map"
-    };
-
     #region Code Search
 
     [McpServerTool(Name = "search_code"), Description("""
@@ -387,7 +372,7 @@ public class SearchTools(
 
             // Filter out binary files upfront
             var searchableFiles = filteredFiles
-                .Where(f => !IsBinaryFile(f))
+                .Where(f => !ToolHelpers.IsLikelyBinary(f))
                 .ToList();
 
             var filesSkipped = filteredFiles.Count - searchableFiles.Count;
@@ -974,12 +959,6 @@ public class SearchTools(
             .Replace(@"\?", ".");                  // ? matches single char
 
         return new Regex($"^{regexPattern}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    }
-
-    private static bool IsBinaryFile(string filePath)
-    {
-        var extension = System.IO.Path.GetExtension(filePath);
-        return BinaryExtensions.Contains(extension);
     }
 
     private async Task<List<SearchMatch>> SearchFileAsync(
