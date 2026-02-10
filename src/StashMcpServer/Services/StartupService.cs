@@ -28,6 +28,8 @@ internal sealed class StartupService(
             await ValidateConnectionAsync(stoppingToken).ConfigureAwait(false);
             await InitializeCacheAsync(stoppingToken).ConfigureAwait(false);
             LogStartupInfo();
+
+            await WarmupDefaultBranchesAsync(stoppingToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -46,7 +48,7 @@ internal sealed class StartupService(
 
         try
         {
-            await bitbucketClient.GetProjectsAsync(limit: 1).ConfigureAwait(false);
+            await bitbucketClient.GetProjectsAsync(limit: 1, cancellationToken: cancellationToken).ConfigureAwait(false);
             logger.LogInformation("Connection to Bitbucket Server validated successfully.");
         }
         catch (Exception ex)
@@ -61,6 +63,22 @@ internal sealed class StartupService(
         logger.LogInformation("Initializing cache...");
         await cacheService.InitializeAsync(cancellationToken).ConfigureAwait(false);
         logger.LogInformation("Cache initialized successfully.");
+    }
+
+    private async Task WarmupDefaultBranchesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await cacheService.WarmupDefaultBranchesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Normal shutdown during warmup — not an error
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Background default branch warmup failed. Branches will be fetched on demand.");
+        }
     }
 
     private void LogStartupInfo()

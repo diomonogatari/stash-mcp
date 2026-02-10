@@ -90,7 +90,7 @@ public class HistoryTools(
         if (string.IsNullOrWhiteSpace(targetRef))
         {
             // Use cached default branch name if available, otherwise fallback to "master"
-            targetRef = CacheService.GetDefaultBranchName(normalizedProjectKey, normalizedSlug) ?? "master";
+            targetRef = await CacheService.GetDefaultBranchNameAsync(normalizedProjectKey, normalizedSlug, cancellationToken).ConfigureAwait(false) ?? "master";
         }
         else
         {

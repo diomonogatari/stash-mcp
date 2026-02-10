@@ -79,7 +79,7 @@ public class SearchTools(
         var effectiveRef = at;
         if (string.IsNullOrWhiteSpace(effectiveRef))
         {
-            effectiveRef = CacheService.GetDefaultBranchName(normalizedProjectKey, normalizedSlug) ?? "master";
+            effectiveRef = await CacheService.GetDefaultBranchNameAsync(normalizedProjectKey, normalizedSlug, cancellationToken).ConfigureAwait(false) ?? "master";
         }
 
         var effectiveLimit = Math.Clamp(limit, 1, MaxSearchLimit);
@@ -1105,7 +1105,7 @@ public class SearchTools(
             }
 
             // Search default branch first, then remaining branches
-            var defaultRef = CacheService.GetDefaultBranchRef(projectKey, repoSlug);
+            var defaultRef = await CacheService.GetDefaultBranchRefAsync(projectKey, repoSlug, cancellationToken: cancellationToken).ConfigureAwait(false);
             var orderedBranches = branches
                 .OrderByDescending(b => string.Equals(b, defaultRef, StringComparison.Ordinal))
                 .ToList();

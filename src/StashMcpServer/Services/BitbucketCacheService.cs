@@ -45,7 +45,6 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
             cancellationToken.ThrowIfCancellationRequested();
 
             await InitializeRecentRepositoriesAsync(cancellationToken).ConfigureAwait(false);
-            await InitializeDefaultBranchesAsync(cancellationToken).ConfigureAwait(false);
 
             LogCacheSummary();
         }
@@ -60,7 +59,7 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _applicationProperties = await _client.GetApplicationPropertiesAsync().ConfigureAwait(false);
+            _applicationProperties = await _client.GetApplicationPropertiesAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Cached application properties (version: {Version}).",
                 _applicationProperties.TryGetValue("version", out var version) ? version : "unknown");
         }
@@ -160,7 +159,7 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
             .SelectMany(kvp => kvp.Value.Select(r => (ProjectKey: kvp.Key, Repository: r)))
             .ToList();
 
-        _logger.LogInformation("Fetching default branches for {Count} repositories...", allRepositories.Count);
+        _logger.LogInformation("Background warmup: fetching default branches for {Count} repositories...", allRepositories.Count);
 
         await Parallel.ForEachAsync(allRepositories, new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = cancellationToken }, async (item, ct) =>
         {
@@ -180,8 +179,15 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
             }
         });
 
-        _logger.LogInformation("Cached {Count} default branches.", _defaultBranches.Count);
+        _logger.LogInformation("Background warmup complete: cached {Count} default branches.", _defaultBranches.Count);
     }
+
+    /// <summary>
+    /// Pre-populates the default branch cache for all known repositories.
+    /// Runs in the background and does not block server readiness.
+    /// </summary>
+    public Task WarmupDefaultBranchesAsync(CancellationToken cancellationToken = default) =>
+        InitializeDefaultBranchesAsync(cancellationToken);
 
     private async Task InitializeSearchAvailabilityAsync(CancellationToken cancellationToken)
     {
@@ -201,10 +207,9 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
     private void LogCacheSummary()
     {
         _logger.LogInformation(
-            "Cache initialization complete. Projects: {Projects}, Repositories: {Repos}, Default Branches: {Branches}, Recent Repos: {Recent}, Search: {Search}",
+            "Cache initialization complete. Projects: {Projects}, Repositories: {Repos}, Recent Repos: {Recent}, Search: {Search}. Default branches will load in background.",
             _projects.Count,
             _projectRepositories.Values.Sum(r => r.Count),
-            _defaultBranches.Count,
             _recentRepositories.Count,
             _isSearchAvailable ? "available" : "unavailable");
     }
@@ -284,21 +289,42 @@ public class BitbucketCacheService(BitbucketClient client, ILogger<BitbucketCach
 
     #region Public Accessors - Default Branches (Tier 1)
 
-    public Branch? GetDefaultBranch(string projectKey, string repositorySlug)
+    /// <summary>
+    /// Gets the default branch for a repository. If not yet cached, fetches it from the API.
+    /// </summary>
+    public async ValueTask<Branch?> GetDefaultBranchAsync(string projectKey, string repositorySlug, CancellationToken cancellationToken = default)
     {
         var key = BuildRepositoryKey(projectKey, repositorySlug);
-        _defaultBranches.TryGetValue(key, out var branch);
-        return branch;
+        if (_defaultBranches.TryGetValue(key, out var branch))
+        {
+            return branch;
+        }
+
+        try
+        {
+            var fetched = await _client.GetDefaultBranchAsync(projectKey, repositorySlug).ConfigureAwait(false);
+            if (fetched is not null)
+            {
+                _defaultBranches[key] = fetched;
+            }
+            return fetched;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to fetch default branch for {ProjectKey}/{RepoSlug}", projectKey, repositorySlug);
+            return null;
+        }
     }
 
-    public string? GetDefaultBranchName(string projectKey, string repositorySlug)
+    public async ValueTask<string?> GetDefaultBranchNameAsync(string projectKey, string repositorySlug, CancellationToken cancellationToken = default)
     {
-        return GetDefaultBranch(projectKey, repositorySlug)?.DisplayId;
+        var branch = await GetDefaultBranchAsync(projectKey, repositorySlug, cancellationToken).ConfigureAwait(false);
+        return branch?.DisplayId;
     }
 
-    public string GetDefaultBranchRef(string projectKey, string repositorySlug, string fallback = "refs/heads/master")
+    public async ValueTask<string> GetDefaultBranchRefAsync(string projectKey, string repositorySlug, string fallback = "refs/heads/master", CancellationToken cancellationToken = default)
     {
-        var branch = GetDefaultBranch(projectKey, repositorySlug);
+        var branch = await GetDefaultBranchAsync(projectKey, repositorySlug, cancellationToken).ConfigureAwait(false);
         return branch?.Id ?? fallback;
     }
 

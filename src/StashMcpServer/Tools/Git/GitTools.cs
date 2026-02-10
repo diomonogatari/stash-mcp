@@ -62,7 +62,7 @@ public class GitTools(
                 : $"No branches found in {normalizedProjectKey}/{normalizedSlug}.";
         }
 
-        var defaultBranch = CacheService.GetDefaultBranchName(normalizedProjectKey, normalizedSlug);
+        var defaultBranch = await CacheService.GetDefaultBranchNameAsync(normalizedProjectKey, normalizedSlug, cancellationToken).ConfigureAwait(false);
 
         if (minimalOutput)
         {
@@ -178,7 +178,7 @@ public class GitTools(
         var effectiveRef = at;
         if (string.IsNullOrWhiteSpace(effectiveRef))
         {
-            effectiveRef = CacheService.GetDefaultBranchName(normalizedProjectKey, normalizedSlug);
+            effectiveRef = await CacheService.GetDefaultBranchNameAsync(normalizedProjectKey, normalizedSlug, cancellationToken).ConfigureAwait(false);
         }
 
         LogToolInvocation(nameof(ListFilesAsync), (nameof(projectKey), projectKey), (nameof(repositorySlug), repositorySlug), (nameof(path), effectivePath), (nameof(at), effectiveRef), (nameof(limit), cappedLimit));

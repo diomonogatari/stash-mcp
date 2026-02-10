@@ -25,11 +25,12 @@ public interface IBitbucketCacheService
     IEnumerable<Repository> GetRecentRepositories();
     bool IsCurrentUser(string? userSlugOrName);
 
-    // Default Branches
-    Branch? GetDefaultBranch(string projectKey, string repositorySlug);
-    string? GetDefaultBranchName(string projectKey, string repositorySlug);
-    string GetDefaultBranchRef(string projectKey, string repositorySlug, string fallback = "refs/heads/master");
+    // Default Branches (lazy-loaded: fetched on demand if not cached)
+    ValueTask<Branch?> GetDefaultBranchAsync(string projectKey, string repositorySlug, CancellationToken cancellationToken = default);
+    ValueTask<string?> GetDefaultBranchNameAsync(string projectKey, string repositorySlug, CancellationToken cancellationToken = default);
+    ValueTask<string> GetDefaultBranchRefAsync(string projectKey, string repositorySlug, string fallback = "refs/heads/master", CancellationToken cancellationToken = default);
     void StoreDefaultBranch(string projectKey, string repositorySlug, Branch branch);
+    Task WarmupDefaultBranchesAsync(CancellationToken cancellationToken = default);
 
     // Application Properties
     IDictionary<string, object?>? GetApplicationProperties();

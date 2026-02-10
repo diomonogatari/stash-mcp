@@ -90,7 +90,7 @@ public class RepositoryTools(
         var effectiveRef = at;
         if (string.IsNullOrWhiteSpace(effectiveRef))
         {
-            effectiveRef = CacheService.GetDefaultBranchName(normalizedProjectKey, normalizedSlug);
+            effectiveRef = await CacheService.GetDefaultBranchNameAsync(normalizedProjectKey, normalizedSlug, cancellationToken).ConfigureAwait(false);
         }
 
         LogToolInvocation(nameof(GetFileContentAsync), (nameof(projectKey), projectKey), (nameof(repositorySlug), repositorySlug), (nameof(filePath), filePath), (nameof(at), effectiveRef));
@@ -191,7 +191,7 @@ public class RepositoryTools(
 
         // Get cached repository info
         var repository = CacheService.FindRepository(normalizedProjectKey, normalizedSlug);
-        var defaultBranch = CacheService.GetDefaultBranchName(normalizedProjectKey, normalizedSlug);
+        var defaultBranch = await CacheService.GetDefaultBranchNameAsync(normalizedProjectKey, normalizedSlug, cancellationToken).ConfigureAwait(false);
 
         // Build comprehensive response
         var sb = new StringBuilder();
