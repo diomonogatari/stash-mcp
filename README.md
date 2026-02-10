@@ -209,6 +209,14 @@ dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
 
 > The double dash (`--`) separates `dotnet run` arguments from application arguments.
 
+#### CLI Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--stash-url` | `BITBUCKET_URL` env var | Bitbucket Server base URL |
+| `--pat` | `BITBUCKET_TOKEN` env var | Personal Access Token |
+| `--log-level` | `Information` | Serilog log level: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fatal` |
+
 ### Building the Docker Image
 
 ```bash
@@ -218,6 +226,43 @@ docker run -i --rm \
   -e BITBUCKET_TOKEN=your_personal_access_token \
   diomonogatari/stash-mcp:dev
 ```
+
+## Troubleshooting
+
+### Docker image not updating
+
+Docker skips the pull when the `latest` tag already exists locally.
+Force a fresh pull:
+
+```bash
+docker pull diomonogatari/stash-mcp:latest
+```
+
+Or pin to a specific version tag (e.g. `diomonogatari/stash-mcp:1.1.0`).
+
+### Connection refused / timeout
+
+- Verify `BITBUCKET_URL` includes the trailing slash and protocol
+  (`https://your-server.com/`)
+- Ensure the Docker container can reach your Bitbucket Server (check
+  corporate VPN, proxy, or firewall rules)
+- For Docker Desktop on macOS/Windows, use `host.docker.internal` if
+  Bitbucket runs on the host machine
+
+### Permission errors (401 / 403)
+
+- Verify the Personal Access Token has **Repository Read** (and
+  **Repository Write** if you need write operations) permissions
+- Check that the token has not expired
+- Set `BITBUCKET_READ_ONLY_MODE=true` if only read access is needed
+
+### Server unresponsive after startup
+
+- Increase the log level to see what is happening:
+  `--log-level Debug` (CLI) or add `-e LOG_LEVEL=Debug` (Docker)
+- Check that the `BITBUCKET_PROJECTS` variable (if set) contains
+  valid project keys — invalid keys cause the startup cache to fail
+  silently
 
 ## Architecture
 
@@ -270,6 +315,8 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and folder structure
 - [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 40 tools
+- [Contributing](CONTRIBUTING.md) — Development setup and pull request guidelines
+- [Security](SECURITY.md) — Vulnerability reporting and credential safety
 - [Changelog](CHANGELOG.md) — Version history and release notes
 
 ## Star History
