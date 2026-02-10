@@ -63,6 +63,13 @@ public class ResilienceSettings
     public bool EnableGracefulDegradation { get; set; } = true;
 
     /// <summary>
+    /// Maximum number of entries in the in-memory response cache.
+    /// Default: 1000
+    /// Environment variable: BITBUCKET_CACHE_SIZE_LIMIT
+    /// </summary>
+    public int CacheSizeLimit { get; set; } = 1000;
+
+    /// <summary>
     /// Creates ResilienceSettings from environment variables with defaults.
     /// </summary>
     public static ResilienceSettings FromEnvironment()
@@ -82,6 +89,11 @@ public class ResilienceSettings
         if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_TTL_SECONDS"), out var cacheTtl))
         {
             settings.DynamicCacheTtl = TimeSpan.FromSeconds(Math.Clamp(cacheTtl, 10, 600));
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_SIZE_LIMIT"), out var cacheSize))
+        {
+            settings.CacheSizeLimit = Math.Clamp(cacheSize, 100, 50_000);
         }
 
         return settings;
