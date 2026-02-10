@@ -8,7 +8,7 @@ using StashMcpServer.Services;
 var stashUrl = Environment.GetEnvironmentVariable("BITBUCKET_URL");
 var pat = Environment.GetEnvironmentVariable("BITBUCKET_TOKEN");
 
-var (parsedUrl, parsedPat, logLevel, transport) = CommandLineParser.ParseArguments(args, stashUrl, pat);
+var (parsedUrl, parsedPat, logLevel) = CommandLineParser.ParseArguments(args, stashUrl, pat);
 stashUrl = parsedUrl;
 pat = parsedPat;
 
@@ -30,38 +30,25 @@ if (string.IsNullOrEmpty(pat))
 // Derive version from assembly metadata
 var assemblyVersion = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
-if (string.Equals(transport, "http", StringComparison.OrdinalIgnoreCase))
+// Redirect Console.Out to prevent any accidental stdout writes from corrupting the JSON-RPC stream. The MCP SDK uses its own stream for protocol messages.
+Console.SetOut(TextWriter.Null);
+
+try
 {
-    // HTTP transport mode — for Docker / remote deployments
-    var builder = WebApplication.CreateBuilder(args);
-
-    ConfigureMcpServer(builder.Services)
-        .WithHttpTransport()
-        .WithToolsFromAssembly();
-
-    ConfigureServices(builder.Services, builder.Logging, isStdio: false);
-
-    var app = builder.Build();
-    app.MapMcp();
-
-    await Console.Error.WriteLineAsync($"Stash MCP Server v{assemblyVersion} listening on HTTP (port 8080, endpoint /)")
-        .ConfigureAwait(false);
-
-    await app.RunAsync().ConfigureAwait(false);
-}
-else
-{
-    // Stdio transport mode — for local MCP clients (default)
     var builder = Host.CreateApplicationBuilder(args);
 
     ConfigureMcpServer(builder.Services)
         .WithStdioServerTransport()
         .WithToolsFromAssembly();
 
-    ConfigureServices(builder.Services, builder.Logging, isStdio: true);
+    ConfigureServices(builder.Services, builder.Logging);
 
     var host = builder.Build();
     await host.RunAsync().ConfigureAwait(false);
+}
+finally
+{
+    await Log.CloseAndFlushAsync().ConfigureAwait(false);
 }
 
 return 0;
@@ -76,13 +63,13 @@ IMcpServerBuilder ConfigureMcpServer(IServiceCollection services)
             Version = assemblyVersion,
         };
         options.ServerInstructions = ServerInstructions.Generate();
-        options.InitializationTimeout = TimeSpan.FromSeconds(30);
+        options.InitializationTimeout = TimeSpan.FromSeconds(15);
     });
 }
 
-void ConfigureServices(IServiceCollection services, ILoggingBuilder logging, bool isStdio)
+void ConfigureServices(IServiceCollection services, ILoggingBuilder logging)
 {
-    services.AddMcpLogging(logLevel, enableMcpLogDispatcher: isStdio);
+    services.AddMcpLogging(logLevel);
     logging.ClearProviders();
     logging.SetMinimumLevel(CommandLineParser.MapToMicrosoftLogLevel(logLevel));
     logging.AddSerilog(dispose: true);

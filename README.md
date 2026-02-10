@@ -116,31 +116,6 @@ Pass additional environment variables to tune resilience and caching behaviour:
 | Cache TTL | `BITBUCKET_CACHE_TTL_SECONDS` | 60 | Cache time-to-live in seconds (10–600) |
 | Read-Only Mode | `BITBUCKET_READ_ONLY_MODE` | false | Disable write operations (`true` or `1`) |
 
-## Docker — HTTP Transport
-
-For standalone or server-side deployments (CI pipelines, shared infrastructure), the container can run as a long-lived HTTP service instead of stdio:
-
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -e BITBUCKET_URL=https://your-stash-server.com/ \
-  -e BITBUCKET_TOKEN=your_personal_access_token \
-  ghcr.io/diomonogatari/stash-mcp:latest
-```
-
-Then point your MCP client at the HTTP endpoint:
-
-```json
-{
-  "servers": {
-    "stash-bitbucket": {
-      "type": "http",
-      "url": "http://localhost:8080/"
-    }
-  }
-}
-```
-
 ## Tool Reference
 
 For detailed documentation of all 40 tools, see [docs/TOOLSET.md](docs/TOOLSET.md).
@@ -208,13 +183,8 @@ dotnet test stash-mcp.slnx
 ### Running Locally
 
 ```bash
-# stdio mode (default — for local MCP clients)
 dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
   --stash-url https://your-server.com/ --pat your_pat
-
-# HTTP mode (for local Docker testing)
-dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
-  --stash-url https://your-server.com/ --pat your_pat --transport http
 ```
 
 > The double dash (`--`) separates `dotnet run` arguments from application arguments.
@@ -223,7 +193,7 @@ dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
 
 ```bash
 docker build -t stash-mcp .
-docker run -d -p 8080:8080 \
+docker run -i --rm \
   -e BITBUCKET_URL=https://your-stash-server.com/ \
   -e BITBUCKET_TOKEN=your_personal_access_token \
   stash-mcp
@@ -259,7 +229,7 @@ docker run -d -p 8080:8080 \
 │  │ (Static)         │ │ ConcurrentDict (projects)   │    │
 │  └──────────┬──────┘ └──────────────────────────────┘    │
 │             │                                            │
-│  Transport: stdio (local) | HTTP (Docker / remote)       │
+│  Transport: stdio                                        │
 └─────────────┼────────────────────────────────────────────┘
               │
               ▼
