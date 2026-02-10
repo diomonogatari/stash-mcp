@@ -1,6 +1,7 @@
 # Stash MCP Server
 
 [![CI](https://github.com/diomonogatari/stash-mcp/actions/workflows/build.yml/badge.svg)](https://github.com/diomonogatari/stash-mcp/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/diomonogatari/stash-mcp/graph/badge.svg)](https://codecov.io/gh/diomonogatari/stash-mcp)
 [![Docker Pulls](https://img.shields.io/docker/pulls/diomonogatari/stash-mcp)](https://hub.docker.com/r/diomonogatari/stash-mcp)
 [![Docker Image Size](https://img.shields.io/docker/image-size/diomonogatari/stash-mcp/latest)](https://hub.docker.com/r/diomonogatari/stash-mcp)
 [![GitHub Release](https://img.shields.io/github/v/release/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/releases)

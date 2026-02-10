@@ -25,6 +25,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - name: Restore dependencies
         run: dotnet restore stash-mcp.slnx
 
@@ -51,6 +58,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - name: Publish (Linux x64)
         run: >
           dotnet publish src/StashMcpServer/StashMcpServer.csproj
@@ -58,6 +72,15 @@ jobs:
           --output ./artifacts/linux-x64
           --self-contained true
           --runtime linux-x64
+          /p:PublishSingleFile=true
+
+      - name: Publish (Linux ARM64)
+        run: >
+          dotnet publish src/StashMcpServer/StashMcpServer.csproj
+          --configuration Release
+          --output ./artifacts/linux-arm64
+          --self-contained true
+          --runtime linux-arm64
           /p:PublishSingleFile=true
 
       - name: Publish (Windows x64)
@@ -69,12 +92,18 @@ jobs:
           --runtime win-x64
           /p:PublishSingleFile=true
 
+      - name: Prepare release artifacts
+        run: |
+          mv artifacts/linux-x64/StashMcpServer artifacts/linux-x64/StashMcpServer-linux-x64
+          mv artifacts/linux-arm64/StashMcpServer artifacts/linux-arm64/StashMcpServer-linux-arm64
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
-            artifacts/linux-x64/StashMcpServer
+            artifacts/linux-x64/StashMcpServer-linux-x64
+            artifacts/linux-arm64/StashMcpServer-linux-arm64
             artifacts/win-x64/StashMcpServer.exe
 
   docker:

@@ -23,6 +23,13 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
       - name: Restore dependencies
         run: dotnet restore stash-mcp.slnx
 
@@ -33,4 +40,15 @@ jobs:
         run: dotnet build stash-mcp.slnx --no-restore
 
       - name: Test
-        run: dotnet test stash-mcp.slnx --no-build
+        run: >
+          dotnet test stash-mcp.slnx
+          --no-build
+          --collect:"XPlat Code Coverage"
+          --results-directory ./coverage
+
+      - name: Upload coverage to Codecov
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v5
+        with:
+          directory: ./coverage
+          fail_ci_if_error: false
