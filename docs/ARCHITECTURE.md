@@ -106,6 +106,13 @@ The application follows a layered architecture with clear separation of concerns
 
 **Stdio Transport**: The server uses stdio (stdin/stdout) for MCP communication. This is the standard transport for MCP servers running as Docker containers or local processes, used by VS Code, Claude Desktop, and other MCP clients.
 
+**Scoped Startup Caching**: Instead of enumerating all projects and repositories at startup, the cache is scoped to the user's active projects. The resolution order is:
+1. `BITBUCKET_PROJECTS` env var — explicit comma-separated project keys
+2. Project keys derived from the authenticated user's recent repositories
+3. Full enumeration (fallback when no scope can be determined)
+
+Tools that reference non-cached projects fall through gracefully: `NormalizeProjectKey` returns the raw key, and `list_repositories` fetches from the API on cache miss.
+
 **Resilience**: All Bitbucket API calls go through `ResilientApiService`, which wraps each call with:
 - Retry with exponential backoff (configurable, default 3 attempts)
 - Circuit breaker (configurable timeout)

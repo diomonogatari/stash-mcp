@@ -89,6 +89,7 @@ Pass additional environment variables to tune resilience and caching behaviour:
         "-e", "BITBUCKET_CIRCUIT_TIMEOUT",
         "-e", "BITBUCKET_CACHE_TTL_SECONDS",
         "-e", "BITBUCKET_READ_ONLY_MODE",
+        "-e", "BITBUCKET_PROJECTS",
         "mcp/stash-mcp"
       ],
       "env": {
@@ -97,7 +98,8 @@ Pass additional environment variables to tune resilience and caching behaviour:
         "BITBUCKET_RETRY_COUNT": "5",
         "BITBUCKET_CIRCUIT_TIMEOUT": "60",
         "BITBUCKET_CACHE_TTL_SECONDS": "120",
-        "BITBUCKET_READ_ONLY_MODE": "false"
+        "BITBUCKET_READ_ONLY_MODE": "false",
+        "BITBUCKET_PROJECTS": "PROJ,TEAM"
       },
       "type": "stdio"
     }
@@ -115,6 +117,7 @@ Pass additional environment variables to tune resilience and caching behaviour:
 | Circuit Timeout | `BITBUCKET_CIRCUIT_TIMEOUT` | 30 | Circuit breaker duration in seconds (5–300) |
 | Cache TTL | `BITBUCKET_CACHE_TTL_SECONDS` | 60 | Cache time-to-live in seconds (10–600) |
 | Read-Only Mode | `BITBUCKET_READ_ONLY_MODE` | false | Disable write operations (`true` or `1`) |
+| Projects | `BITBUCKET_PROJECTS` | — | Comma-separated project keys to cache at startup (e.g. `PROJ,TEAM`). When omitted, derives scope from recent repositories. |
 
 ## Tool Reference
 
