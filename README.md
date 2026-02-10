@@ -1,6 +1,6 @@
 # Stash MCP Server
 
-A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image. It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
+A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image on [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp). It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
 
 ## Features
 
@@ -58,7 +58,7 @@ Add the following to your VS Code MCP configuration file
         "run", "-i", "--rm",
         "-e", "BITBUCKET_URL",
         "-e", "BITBUCKET_TOKEN",
-        "mcp/stash-mcp"
+        "diomonogatari/stash-mcp:latest"
       ],
       "env": {
         "BITBUCKET_URL": "https://your-stash-server.com/",
@@ -71,6 +71,12 @@ Add the following to your VS Code MCP configuration file
 ```
 
 That's it. VS Code will pull the image on first use and start the server automatically.
+
+> **Tip — pin to a specific tag** instead of `latest` (e.g. `diomonogatari/stash-mcp:1.1.0`)
+> to avoid running a stale local image when a new version is published.
+> Docker skips the pull when a local image already has the `latest` tag.
+> If you must use `latest`, force a pull with
+> `docker run --pull=always ... diomonogatari/stash-mcp:latest`.
 
 ### Advanced Configuration
 
@@ -90,7 +96,7 @@ Pass additional environment variables to tune resilience and caching behaviour:
         "-e", "BITBUCKET_CACHE_TTL_SECONDS",
         "-e", "BITBUCKET_READ_ONLY_MODE",
         "-e", "BITBUCKET_PROJECTS",
-        "mcp/stash-mcp"
+        "diomonogatari/stash-mcp:latest"
       ],
       "env": {
         "BITBUCKET_URL": "https://your-stash-server.com/",
@@ -164,13 +170,17 @@ For list operations, use `minimalOutput=true` to reduce response size:
 ### Setup
 
 1. Clone the repository **with submodules**:
+
    ```bash
    git clone --recurse-submodules https://github.com/diomonogatari/stash-mcp.git
    ```
+
    If you already cloned without submodules:
+
    ```bash
    git submodule update --init --recursive
    ```
+
 2. Install the [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
 
 ### Building
@@ -195,11 +205,11 @@ dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
 ### Building the Docker Image
 
 ```bash
-docker build -t stash-mcp .
+docker build -t diomonogatari/stash-mcp:dev .
 docker run -i --rm \
   -e BITBUCKET_URL=https://your-stash-server.com/ \
   -e BITBUCKET_TOKEN=your_personal_access_token \
-  stash-mcp
+  diomonogatari/stash-mcp:dev
 ```
 
 ## Architecture
