@@ -157,7 +157,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var recentRepos = await _client.GetRecentReposAsync(limit: 25).ConfigureAwait(false);
+            var recentRepos = await _client.GetRecentReposAsync(limit: 25, cancellationToken: cancellationToken).ConfigureAwait(false);
             _recentRepositories = recentRepos.ToList();
             _logger.LogInformation("Cached {Count} recent repositories for current user.", _recentRepositories.Count);
         }
@@ -256,7 +256,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
         {
             try
             {
-                var defaultBranch = await _client.GetDefaultBranchAsync(item.ProjectKey, item.Repository.Slug!);
+                var defaultBranch = await _client.GetDefaultBranchAsync(item.ProjectKey, item.Repository.Slug!, ct);
                 if (defaultBranch is not null)
                 {
                     var key = BuildRepositoryKey(item.ProjectKey, item.Repository.Slug!);
@@ -393,7 +393,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
 
         try
         {
-            var fetched = await _client.GetDefaultBranchAsync(projectKey, repositorySlug).ConfigureAwait(false);
+            var fetched = await _client.GetDefaultBranchAsync(projectKey, repositorySlug, cancellationToken).ConfigureAwait(false);
             if (fetched is not null)
             {
                 _defaultBranches[key] = fetched;
