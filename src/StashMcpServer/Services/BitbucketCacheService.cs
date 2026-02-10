@@ -29,9 +29,16 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
     // Tier 1: Server capabilities
     private bool _isSearchAvailable;
 
+    // I/O parallelism derived from host hardware.
+    // API calls are I/O-bound, so we use ProcessorCount as the baseline (clamped to a sensible range).
+    // Branch warmup uses a 2× multiplier because each call is a lightweight single-resource GET.
+    private static readonly int IoParallelism = Math.Clamp(Environment.ProcessorCount, 2, 16);
+    private static readonly int BranchWarmupParallelism = Math.Clamp(Environment.ProcessorCount * 2, 4, 32);
+
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Initializing Bitbucket cache...");
+        _logger.LogInformation("Initializing Bitbucket cache (CPUs: {ProcessorCount}, I/O parallelism: {IoParallelism}, branch warmup: {BranchParallelism})...",
+            Environment.ProcessorCount, IoParallelism, BranchWarmupParallelism);
 
         try
         {
@@ -172,7 +179,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
         }
 
         // Fetch repositories for all cached projects
-        await Parallel.ForEachAsync(_projects, new ParallelOptions { MaxDegreeOfParallelism = 5, CancellationToken = cancellationToken }, async (project, ct) =>
+        await Parallel.ForEachAsync(_projects, new ParallelOptions { MaxDegreeOfParallelism = IoParallelism, CancellationToken = cancellationToken }, async (project, ct) =>
         {
             try
             {
@@ -200,7 +207,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
     {
         var projectsList = new List<Project>();
 
-        await Parallel.ForEachAsync(projectKeys, new ParallelOptions { MaxDegreeOfParallelism = 5, CancellationToken = cancellationToken }, async (key, ct) =>
+        await Parallel.ForEachAsync(projectKeys, new ParallelOptions { MaxDegreeOfParallelism = IoParallelism, CancellationToken = cancellationToken }, async (key, ct) =>
         {
             try
             {
@@ -245,7 +252,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
 
         _logger.LogInformation("Background warmup: fetching default branches for {Count} repositories...", allRepositories.Count);
 
-        await Parallel.ForEachAsync(allRepositories, new ParallelOptions { MaxDegreeOfParallelism = 10, CancellationToken = cancellationToken }, async (item, ct) =>
+        await Parallel.ForEachAsync(allRepositories, new ParallelOptions { MaxDegreeOfParallelism = BranchWarmupParallelism, CancellationToken = cancellationToken }, async (item, ct) =>
         {
             try
             {
