@@ -570,7 +570,7 @@ Create a new task attached to a comment on a pull request. Tasks are used to tra
 Update the description text of an existing task. You can also change task state.
 
 - **Required**: `taskId`, `text`
-- **Optional**: `state` (`OPEN` or `RESOLVED`)
+- **Optional**:`state` (`OPEN` or `RESOLVED`)
 
 ### delete_pull_request_task
 
