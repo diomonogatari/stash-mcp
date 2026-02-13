@@ -1,10 +1,10 @@
-using System.Net;
 using Bitbucket.Net.Common.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using ModelContextProtocol;
 using StashMcpServer.Configuration;
 using StashMcpServer.Services;
+using System.Net;
 
 namespace StashMcpServer.Tests.Services;
 
