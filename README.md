@@ -1,5 +1,13 @@
 # Stash MCP Server
 
+[![CI](https://github.com/diomonogatari/stash-mcp/actions/workflows/build.yml/badge.svg)](https://github.com/diomonogatari/stash-mcp/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/diomonogatari/stash-mcp/graph/badge.svg)](https://codecov.io/gh/diomonogatari/stash-mcp)
+[![Docker Pulls](https://img.shields.io/docker/pulls/diomonogatari/stash-mcp)](https://hub.docker.com/r/diomonogatari/stash-mcp)
+[![Docker Image Size](https://img.shields.io/docker/image-size/diomonogatari/stash-mcp/latest)](https://hub.docker.com/r/diomonogatari/stash-mcp)
+[![GitHub Release](https://img.shields.io/github/v/release/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/releases)
+[![license](https://img.shields.io/github/license/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/blob/main/LICENSE)
+![.NET 10.0](https://img.shields.io/badge/.net-10.0-512BD4)
+
 A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image on [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp). It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
 
 ## Features
@@ -202,6 +210,14 @@ dotnet run --project src/StashMcpServer/StashMcpServer.csproj -- \
 
 > The double dash (`--`) separates `dotnet run` arguments from application arguments.
 
+#### CLI Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--stash-url` | `BITBUCKET_URL` env var | Bitbucket Server base URL |
+| `--pat` | `BITBUCKET_TOKEN` env var | Personal Access Token |
+| `--log-level` | `Information` | Serilog log level: `Verbose`, `Debug`, `Information`, `Warning`, `Error`, `Fatal` |
+
 ### Building the Docker Image
 
 ```bash
@@ -211,6 +227,44 @@ docker run -i --rm \
   -e BITBUCKET_TOKEN=your_personal_access_token \
   diomonogatari/stash-mcp:dev
 ```
+
+## Troubleshooting
+
+### Docker image not updating
+
+Docker skips the pull when the `latest` tag already exists locally.
+Force a fresh pull:
+
+```bash
+docker pull diomonogatari/stash-mcp:latest
+```
+
+Or pin to a specific version tag (e.g. `diomonogatari/stash-mcp:1.1.0`).
+
+### Connection refused / timeout
+
+- Verify `BITBUCKET_URL` includes the trailing slash and protocol
+  (`https://your-server.com/`)
+- Ensure the Docker container can reach your Bitbucket Server (check
+  corporate VPN, proxy, or firewall rules)
+- For Docker Desktop on macOS/Windows, use `host.docker.internal` if
+  Bitbucket runs on the host machine
+
+### Permission errors (401 / 403)
+
+- Verify the Personal Access Token has **Repository Read** (and
+  **Repository Write** if you need write operations) permissions
+- Check that the token has not expired
+- Set `BITBUCKET_READ_ONLY_MODE=true` if only read access is needed
+
+### Server unresponsive after startup
+
+- Increase the log level to see what is happening:
+  `--log-level Debug` (CLI) or append `--log-level Debug` after the image
+  name in the `docker run` command
+- Check that the `BITBUCKET_PROJECTS` variable (if set) contains
+  valid project keys — invalid keys cause the startup cache to fail
+  silently
 
 ## Architecture
 
@@ -263,7 +317,17 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and folder structure
 - [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 40 tools
+- [Contributing](CONTRIBUTING.md) — Development setup and pull request guidelines
+- [Security](SECURITY.md) — Vulnerability reporting and credential safety
 - [Changelog](CHANGELOG.md) — Version history and release notes
+
+## Star History
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=diomonogatari/stash-mcp&type=Date&theme=dark" />
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=diomonogatari/stash-mcp&type=Date" />
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=diomonogatari/stash-mcp&type=Date" />
+</picture>
 
 ## License
 

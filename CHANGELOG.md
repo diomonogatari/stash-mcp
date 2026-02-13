@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-02-13
+
+### Added
+
+- New `merge_pull_request` MCP tool with read-only mode guard
+- Optional `state` parameter on `update_pull_request_task` (`OPEN` or `RESOLVED`)
+
+### Changed
+
+- Updated `lib/Bitbucket.Net` submodule to latest `main`
+- Migrated pull request/task write operations to v1.0.0 request DTOs:
+	- `CreatePullRequestRequest`
+	- `UpdatePullRequestRequest`
+	- `CreateTaskRequest`
+	- `UpdateTaskRequest`
+- Migrated dependency injection and consumers from concrete `BitbucketClient` to `IBitbucketClient`
+- Adopted fluent query builders in high-value read paths (pull requests, commits, branches, projects)
+- Removed redundant `.ToList()` materialization where paginated `Items` already provide `IReadOnlyList<T>`
+
+### Fixed
+
+- Pull request merge/create/update and task create/update compatibility with Bitbucket.Net v1.0.0 breaking API changes
+- Pull request cache invalidation coverage after merge operations
+
 ## [1.1.0] - 2026-02-10
 
 ### Added

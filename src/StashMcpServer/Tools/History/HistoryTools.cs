@@ -14,7 +14,7 @@ public class HistoryTools(
     ILogger<HistoryTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings,
     IDiffFormatter diffFormatter)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
@@ -116,21 +116,23 @@ public class HistoryTools(
         cancellationToken.ThrowIfCancellationRequested();
 
         var cacheKey = $"{CacheKeys.CommitList(normalizedProjectKey, normalizedSlug, targetRef, path)}:merges={merges}:limit={cappedLimit}";
+        var commitQuery = Client.Commits(normalizedProjectKey, normalizedSlug, targetRef)
+            .Merges(mergeHandling);
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            commitQuery = commitQuery.AtPath(path);
+        }
+
         var paginatedCommits = await ResilientApi.ExecuteAsync(
             cacheKey,
-            async _ => await Client.GetCommitsStreamAsync(
-                    normalizedProjectKey,
-                    normalizedSlug,
-                    until: targetRef,
-                    path: path,
-                    merges: mergeHandling,
-                    cancellationToken: cancellationToken)
+            async _ => await commitQuery
+                    .StreamAsync(cancellationToken)
                 .TakeWithPaginationAsync(cappedLimit, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var commits = paginatedCommits.Items.ToList();
+        var commits = paginatedCommits.Items;
         if (commits.Count == 0)
         {
             return $"No commits found in {normalizedProjectKey}/{normalizedSlug} for ref `{targetRef}`" +
@@ -202,7 +204,7 @@ public class HistoryTools(
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var changesList = paginatedChanges.Items.ToList();
+        var changesList = paginatedChanges.Items;
         if (changesList.Count == 0)
         {
             return $"No file changes reported for commit {commitId}.";
@@ -329,7 +331,7 @@ public class HistoryTools(
 
         var commit = await commitTask.ConfigureAwait(false);
         var paginatedChanges = await changesTask.ConfigureAwait(false);
-        var changes = paginatedChanges.Items.ToList();
+        var changes = paginatedChanges.Items;
 
         if (commit == null)
         {

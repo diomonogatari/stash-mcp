@@ -6,6 +6,7 @@ using Polly.CircuitBreaker;
 using Polly.Retry;
 using Polly.Timeout;
 using StashMcpServer.Configuration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace StashMcpServer.Services;
 
@@ -76,12 +77,12 @@ public class ResilientApiService : IResilientApiService
         }
         catch (BrokenCircuitException ex)
         {
-            _logger.LogWarning("Circuit breaker is open for key {CacheKey}. Attempting graceful degradation.", cacheKey);
+            _logger.LogWarning(ex, "Circuit breaker is open for key {CacheKey}. Attempting graceful degradation.", cacheKey);
             return HandleGracefulDegradation<T>(cacheKey, ex);
         }
         catch (TimeoutRejectedException ex)
         {
-            _logger.LogWarning("Request timed out for key {CacheKey}. Attempting graceful degradation.", cacheKey);
+            _logger.LogWarning(ex, "Request timed out for key {CacheKey}. Attempting graceful degradation.", cacheKey);
             return HandleGracefulDegradation<T>(cacheKey, ex);
         }
         catch (BitbucketApiException ex)
@@ -114,36 +115,12 @@ public class ResilientApiService : IResilientApiService
                 async ct => await operation(ct),
                 cancellationToken);
         }
-        catch (BrokenCircuitException ex)
-        {
-            _logger.LogWarning("Circuit breaker is open for write operation. Error: {Message}", ex.Message);
-            throw new McpException($"Bitbucket API unavailable (circuit breaker open): {ex.Message}");
-        }
-        catch (TimeoutRejectedException ex)
-        {
-            _logger.LogWarning("Write operation timed out. Error: {Message}", ex.Message);
-            throw new McpException($"Operation timed out: {ex.Message}");
-        }
-        catch (BitbucketNotFoundException ex)
-        {
-            _logger.LogWarning("Resource not found: {Message}", ex.Message);
-            throw new McpException($"Resource not found: {ex.Context ?? ex.Message}");
-        }
-        catch (BitbucketForbiddenException ex)
-        {
-            _logger.LogWarning("Access forbidden: {Message}", ex.Message);
-            throw new McpException($"Access forbidden: {ex.Message}");
-        }
-        catch (BitbucketApiException ex)
-        {
-            _logger.LogError(ex, "Bitbucket API error ({StatusCode}): {Message}", (int)ex.StatusCode, ex.Message);
-            throw new McpException($"Bitbucket API error ({(int)ex.StatusCode}): {ex.Message}");
-        }
         catch (Exception ex) when (ex is not OperationCanceledException and not McpException)
         {
-            _logger.LogError(ex, "Write operation failed unexpectedly");
-            throw new McpException($"Operation failed: {ex.Message}");
+            ThrowUncachedException(ex);
         }
+
+        return default!; // Unreachable — ThrowUncachedException always throws
     }
 
     /// <summary>
@@ -166,35 +143,9 @@ public class ResilientApiService : IResilientApiService
                 },
                 cancellationToken);
         }
-        catch (BrokenCircuitException ex)
-        {
-            _logger.LogWarning("Circuit breaker is open for write operation. Error: {Message}", ex.Message);
-            throw new McpException($"Bitbucket API unavailable (circuit breaker open): {ex.Message}");
-        }
-        catch (TimeoutRejectedException ex)
-        {
-            _logger.LogWarning("Write operation timed out. Error: {Message}", ex.Message);
-            throw new McpException($"Operation timed out: {ex.Message}");
-        }
-        catch (BitbucketNotFoundException ex)
-        {
-            _logger.LogWarning("Resource not found: {Message}", ex.Message);
-            throw new McpException($"Resource not found: {ex.Context ?? ex.Message}");
-        }
-        catch (BitbucketForbiddenException ex)
-        {
-            _logger.LogWarning("Access forbidden: {Message}", ex.Message);
-            throw new McpException($"Access forbidden: {ex.Message}");
-        }
-        catch (BitbucketApiException ex)
-        {
-            _logger.LogError(ex, "Bitbucket API error ({StatusCode}): {Message}", (int)ex.StatusCode, ex.Message);
-            throw new McpException($"Bitbucket API error ({(int)ex.StatusCode}): {ex.Message}");
-        }
         catch (Exception ex) when (ex is not OperationCanceledException and not McpException)
         {
-            _logger.LogError(ex, "Write operation failed unexpectedly");
-            throw new McpException($"Operation failed: {ex.Message}");
+            ThrowUncachedException(ex);
         }
     }
 
@@ -277,6 +228,41 @@ public class ResilientApiService : IResilientApiService
                     }
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Maps a known API exception to an <see cref="McpException"/> and throws it.
+    /// Consolidates error logging and exception wrapping for uncached operations.
+    /// </summary>
+    [DoesNotReturn]
+    private void ThrowUncachedException(Exception ex)
+    {
+        switch (ex)
+        {
+            case BrokenCircuitException bce:
+                _logger.LogWarning("Circuit breaker is open. Error: {Message}", bce.Message);
+                throw new McpException($"Bitbucket API unavailable (circuit breaker open): {bce.Message}");
+
+            case TimeoutRejectedException tre:
+                _logger.LogWarning("Operation timed out. Error: {Message}", tre.Message);
+                throw new McpException($"Operation timed out: {tre.Message}");
+
+            case BitbucketNotFoundException bnfe:
+                _logger.LogWarning("Resource not found: {Message}", bnfe.Message);
+                throw new McpException($"Resource not found: {bnfe.Context ?? bnfe.Message}");
+
+            case BitbucketForbiddenException bfe:
+                _logger.LogWarning("Access forbidden: {Message}", bfe.Message);
+                throw new McpException($"Access forbidden: {bfe.Message}");
+
+            case BitbucketApiException bae:
+                _logger.LogError(ex, "Bitbucket API error ({StatusCode}): {Message}", (int)bae.StatusCode, bae.Message);
+                throw new McpException($"Bitbucket API error ({(int)bae.StatusCode}): {bae.Message}");
+
+            default:
+                _logger.LogError(ex, "Operation failed unexpectedly");
+                throw new McpException($"Operation failed: {ex.Message}");
         }
     }
 

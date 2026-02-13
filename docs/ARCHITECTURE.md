@@ -102,7 +102,9 @@ The application follows a layered architecture with clear separation of concerns
 - Shared helpers: `NormalizeProjectKey`, `NormalizeRepositorySlug`, `CheckReadOnlyMode`, `LogToolInvocation`
 - Consistent error handling and logging
 
-**Interface-Driven Services**: Core services (`IBitbucketCacheService`, `IResilientApiService`, `IServerSettings`, `IDiffFormatter`) are registered as interfaces, enabling unit testing with mocks.
+**Interface-Driven Services**: Core services (`IBitbucketCacheService`, `IResilientApiService`, `IServerSettings`, `IDiffFormatter`) and the Bitbucket API client (`IBitbucketClient`) are registered via interfaces, enabling unit testing with mocks and cleaner dependency boundaries.
+
+**Fluent Query Builders**: Tool implementations prefer query builders (`PullRequests(...)`, `Commits(...)`, `Branches(...)`, `Projects(...)`) for parameter-heavy reads. This reduces positional argument complexity and keeps API intent explicit while preserving the same underlying REST calls.
 
 **Stdio Transport**: The server uses stdio (stdin/stdout) for MCP communication. This is the standard transport for MCP servers running as Docker containers or local processes, used by VS Code, Claude Desktop, and other MCP clients.
 

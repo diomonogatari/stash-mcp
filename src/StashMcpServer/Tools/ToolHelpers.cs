@@ -47,13 +47,27 @@ public static class ToolHelpers
     }
 
     /// <summary>
+    /// Binary file extensions to skip during search and content display.
+    /// </summary>
+    private static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".dll", ".exe", ".bin", ".obj", ".o", ".so", ".dylib",
+        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg", ".webp",
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+        ".zip", ".tar", ".gz", ".rar", ".7z", ".jar", ".war", ".ear",
+        ".mp3", ".mp4", ".wav", ".avi", ".mov", ".mkv",
+        ".woff", ".woff2", ".ttf", ".eot", ".otf",
+        ".class", ".pyc", ".pdb", ".nupkg", ".snupkg",
+        ".lock", ".min.js", ".min.css", ".map"
+    };
+
+    /// <summary>
     /// Checks if a file is likely a binary file based on its extension.
     /// </summary>
     public static bool IsLikelyBinary(string filename)
     {
-        var ext = Path.GetExtension(filename).ToLower();
-        var binaryExtensions = new[] { ".dll", ".exe", ".png", ".jpg", ".gif", ".zip", ".pdf", ".obj", ".bin" };
-        return binaryExtensions.Contains(ext);
+        var ext = Path.GetExtension(filename);
+        return BinaryExtensions.Contains(ext);
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using Bitbucket.Net;
 using Bitbucket.Net.Common.Mcp;
 using Bitbucket.Net.Models.Core.Projects;
+using Bitbucket.Net.Models.Core.Projects.Requests;
 using Bitbucket.Net.Models.Core.Tasks;
 using ModelContextProtocol.Server;
 using StashMcpServer.Formatting;
@@ -15,7 +16,7 @@ public class PullRequestTools(
     ILogger<PullRequestTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings,
     IDiffFormatter diffFormatter) : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -108,11 +109,9 @@ public class PullRequestTools(
         var cacheKey = $"{CacheKeys.PullRequestList(normalizedProjectKey, normalizedSlug, state.ToUpperInvariant())}:limit={cappedLimit}";
         var paginatedPrs = await ResilientApi.ExecuteAsync(
             cacheKey,
-            async _ => await Client.GetPullRequestsStreamAsync(
-                    normalizedProjectKey,
-                    normalizedSlug,
-                    state: prState,
-                    cancellationToken: cancellationToken)
+            async _ => await Client.PullRequests(normalizedProjectKey, normalizedSlug)
+                    .InState(prState)
+                    .StreamAsync(cancellationToken)
                 .TakeWithPaginationAsync(cappedLimit, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
@@ -120,7 +119,7 @@ public class PullRequestTools(
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var prList = paginatedPrs.Items.ToList();
+        var prList = paginatedPrs.Items;
 
         // Minimal output mode - compact format
         if (minimalOutput)
@@ -788,7 +787,7 @@ public class PullRequestTools(
         // Each optional section can fail independently without breaking the entire response
         var activitiesTask = (includeComments || includeActivity)
             ? GetActivitiesSafeAsync(normalizedProjectKey, normalizedSlug, pullRequestId, cancellationToken)
-            : Task.FromResult<(List<PullRequestActivity> Activities, string? Error)>(([], null));
+            : Task.FromResult<(IReadOnlyList<PullRequestActivity> Activities, string? Error)>((Array.Empty<PullRequestActivity>(), null));
 
         var diffTask = includeDiff
             ? GetDiffSafeAsync(normalizedProjectKey, normalizedSlug, pullRequestId, cancellationToken)
@@ -952,13 +951,10 @@ public class PullRequestTools(
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        var pullRequestInfo = new PullRequestInfo
+        var pullRequestInfo = new CreatePullRequestRequest
         {
             Title = title.Trim(),
             Description = description?.Trim(),
-            State = PullRequestStates.Open,
-            Open = true,
-            Closed = false,
             FromRef = new FromToRef
             {
                 Id = fromRefId,
@@ -973,7 +969,7 @@ public class PullRequestTools(
         };
 
         var result = await ResilientApi.ExecuteWithoutCacheAsync(
-            async _ => await Client.CreatePullRequestAsync(normalizedProjectKey, normalizedSlug, pullRequestInfo)
+            async _ => await Client.CreatePullRequestAsync(normalizedProjectKey, normalizedSlug, pullRequestInfo, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -1049,9 +1045,8 @@ public class PullRequestTools(
         var updatedTitle = string.IsNullOrWhiteSpace(title) ? existing.Title : title.Trim();
         var updatedDescription = string.IsNullOrWhiteSpace(description) ? existing.Description : description.Trim();
 
-        var update = new PullRequestUpdate
+        var update = new UpdatePullRequestRequest
         {
-            Id = existing.Id,
             Version = existing.Version,
             Title = updatedTitle,
             Description = updatedDescription,
@@ -1059,12 +1054,69 @@ public class PullRequestTools(
         };
 
         var result = await ResilientApi.ExecuteWithoutCacheAsync(
-            async _ => await Client.UpdatePullRequestAsync(normalizedProjectKey, normalizedSlug, pullRequestId, update)
+            async _ => await Client.UpdatePullRequestAsync(normalizedProjectKey, normalizedSlug, pullRequestId, update, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
         // Invalidate PR caches so subsequent reads reflect the changes
+        ResilientApi.InvalidatePullRequestCache(normalizedProjectKey, normalizedSlug, pullRequestId);
+        ResilientApi.InvalidatePullRequestListCache(normalizedProjectKey, normalizedSlug);
+
+        return FormatPullRequestSummary(result);
+    }
+
+    [McpServerTool(Name = "merge_pull_request"), Description("Merge an existing pull request. Optionally provide a custom merge message or strategy.")]
+    public async Task<string> MergePullRequestAsync(
+        [Description("The key of the Bitbucket project.")] string projectKey,
+        [Description("The slug of the Bitbucket repository.")] string repositorySlug,
+        [Description("The ID of the pull request.")] int pullRequestId,
+        [Description("Optional custom merge commit message.")] string? message = null,
+        [Description("Optional merge strategy override (passed through to Bitbucket Server).")]
+        string? strategy = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (CheckReadOnlyMode() is { } readOnlyError)
+        {
+            return readOnlyError;
+        }
+
+        var normalizedProjectKey = NormalizeProjectKey(projectKey);
+        var normalizedSlug = NormalizeRepositorySlug(normalizedProjectKey, repositorySlug);
+
+        LogToolInvocation(nameof(MergePullRequestAsync),
+            (nameof(projectKey), projectKey),
+            (nameof(repositorySlug), repositorySlug),
+            (nameof(pullRequestId), pullRequestId),
+            (nameof(message), message),
+            (nameof(strategy), strategy));
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var existing = await ResilientApi.ExecuteWithoutCacheAsync(
+            async _ => await Client.GetPullRequestAsync(normalizedProjectKey, normalizedSlug, pullRequestId, cancellationToken)
+                .ConfigureAwait(false),
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        if (existing is null)
+        {
+            return $"Pull request #{pullRequestId} not found.";
+        }
+
+        var mergeRequest = new MergePullRequestRequest
+        {
+            Version = existing.Version,
+            Message = string.IsNullOrWhiteSpace(message) ? null : message.Trim(),
+            Strategy = string.IsNullOrWhiteSpace(strategy) ? null : strategy.Trim()
+        };
+
+        var result = await ResilientApi.ExecuteWithoutCacheAsync(
+            async _ => await Client.MergePullRequestAsync(normalizedProjectKey, normalizedSlug, pullRequestId, mergeRequest, cancellationToken)
+                .ConfigureAwait(false),
+            cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
         ResilientApi.InvalidatePullRequestCache(normalizedProjectKey, normalizedSlug, pullRequestId);
         ResilientApi.InvalidatePullRequestListCache(normalizedProjectKey, normalizedSlug);
 
@@ -1257,7 +1309,7 @@ public class PullRequestTools(
             }
         }
 
-        var taskInfo = new TaskInfo
+        var taskInfo = new CreateTaskRequest
         {
             Text = text.Trim(),
             Anchor = new TaskBasicAnchor
@@ -1268,7 +1320,7 @@ public class PullRequestTools(
         };
 
         var createdTask = await ResilientApi.ExecuteWithoutCacheAsync(
-            async _ => await Client.CreateTaskAsync(taskInfo)
+            async _ => await Client.CreateTaskAsync(taskInfo, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -1307,10 +1359,11 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "update_pull_request_task"), Description("Update the text of an existing task. Note: State changes (open/resolved) are not currently supported by the Bitbucket API - tasks are resolved by addressing the underlying comment.")]
+    [McpServerTool(Name = "update_pull_request_task"), Description("Update an existing task's text and optional state. State can be 'OPEN' or 'RESOLVED'.")]
     public async Task<string> UpdatePullRequestTaskAsync(
         [Description("The ID of the task to update.")] int taskId,
         [Description("The new task description text.")] string text,
+        [Description("Optional new task state: 'OPEN' or 'RESOLVED'.")] string? state = null,
         CancellationToken cancellationToken = default)
     {
         if (CheckReadOnlyMode() is { } readOnlyError)
@@ -1323,14 +1376,36 @@ public class PullRequestTools(
             throw new ArgumentException("Task text is required.", nameof(text));
         }
 
+        string? normalizedState = null;
+        if (state is not null)
+        {
+            if (string.IsNullOrWhiteSpace(state))
+            {
+                throw new ArgumentException("State must be 'OPEN' or 'RESOLVED' when provided.", nameof(state));
+            }
+
+            normalizedState = state.Trim().ToUpperInvariant();
+            if (normalizedState is not ("OPEN" or "RESOLVED"))
+            {
+                throw new ArgumentException("State must be 'OPEN' or 'RESOLVED'.", nameof(state));
+            }
+        }
+
         LogToolInvocation(nameof(UpdatePullRequestTaskAsync),
             (nameof(taskId), taskId),
-            (nameof(text), text));
+            (nameof(text), text),
+            (nameof(state), state));
 
         cancellationToken.ThrowIfCancellationRequested();
 
+        var updateRequest = new UpdateTaskRequest
+        {
+            Text = text.Trim(),
+            State = normalizedState
+        };
+
         var updatedTask = await ResilientApi.ExecuteWithoutCacheAsync(
-            async _ => await Client.UpdateTaskAsync(taskId, text.Trim())
+            async _ => await Client.UpdateTaskAsync(taskId, updateRequest, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -1384,7 +1459,7 @@ public class PullRequestTools(
     /// <summary>
     /// Safely fetches PR activities with error handling for graceful degradation.
     /// </summary>
-    private async Task<(List<PullRequestActivity> Activities, string? Error)> GetActivitiesSafeAsync(
+    private async Task<(IReadOnlyList<PullRequestActivity> Activities, string? Error)> GetActivitiesSafeAsync(
         string projectKey, string repoSlug, int prId, CancellationToken cancellationToken)
     {
         try
@@ -1400,7 +1475,7 @@ public class PullRequestTools(
                 cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return (paginatedActivities.Items.ToList(), null);
+            return (paginatedActivities.Items, null);
         }
         catch (OperationCanceledException)
         {
@@ -1584,7 +1659,7 @@ public class PullRequestTools(
         }
     }
 
-    private static void FormatActivityTimeline(StringBuilder sb, List<PullRequestActivity> activities)
+    private static void FormatActivityTimeline(StringBuilder sb, IReadOnlyList<PullRequestActivity> activities)
     {
         sb.AppendLine("## Activity Timeline");
 
@@ -1610,7 +1685,7 @@ public class PullRequestTools(
         }
     }
 
-    private void FormatCommentsSection(StringBuilder sb, List<PullRequestActivity> commentActivities)
+    private void FormatCommentsSection(StringBuilder sb, IReadOnlyList<PullRequestActivity> commentActivities)
     {
         sb.AppendLine("## Comments");
         sb.AppendLine($"Total: {commentActivities.Count} comment thread(s)");

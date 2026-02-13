@@ -4,6 +4,7 @@ using ModelContextProtocol.Server;
 using StashMcpServer.Formatting;
 using StashMcpServer.Services;
 using System.ComponentModel;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -14,7 +15,7 @@ public class SearchTools(
     ILogger<SearchTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -30,21 +31,6 @@ public class SearchTools(
     private const int MaxPrSearchLimit = 100;
     private const int DefaultUserSearchLimit = 25;
     private const int MaxUserSearchLimit = 100;
-
-    /// <summary>
-    /// Binary file extensions to skip during search.
-    /// </summary>
-    private static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".dll", ".exe", ".bin", ".obj", ".o", ".so", ".dylib",
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg", ".webp",
-        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
-        ".zip", ".tar", ".gz", ".rar", ".7z", ".jar", ".war", ".ear",
-        ".mp3", ".mp4", ".wav", ".avi", ".mov", ".mkv",
-        ".woff", ".woff2", ".ttf", ".eot", ".otf",
-        ".class", ".pyc", ".pdb", ".nupkg", ".snupkg",
-        ".lock", ".min.js", ".min.css", ".map"
-    };
 
     #region Code Search
 
@@ -387,7 +373,7 @@ public class SearchTools(
 
             // Filter out binary files upfront
             var searchableFiles = filteredFiles
-                .Where(f => !IsBinaryFile(f))
+                .Where(f => !ToolHelpers.IsLikelyBinary(f))
                 .ToList();
 
             var filesSkipped = filteredFiles.Count - searchableFiles.Count;
@@ -414,7 +400,7 @@ public class SearchTools(
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    Logger.LogDebug("Skipping file {FilePath}: {Error}", filePath, ex.Message);
+                    Logger.LogDebug(ex, "Skipping file {FilePath}", filePath);
                     return (FilePath: filePath, Matches: new List<SearchMatch>(), Success: false);
                 }
                 finally
@@ -521,7 +507,7 @@ public class SearchTools(
 
         if (!string.IsNullOrWhiteSpace(since))
         {
-            if (!DateTimeOffset.TryParse(since, out var parsedSince))
+            if (!DateTimeOffset.TryParse(since, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedSince))
             {
                 return $"Error: Invalid 'since' date format: '{since}'. Use ISO 8601 format (e.g., '2024-01-15').";
             }
@@ -530,7 +516,7 @@ public class SearchTools(
 
         if (!string.IsNullOrWhiteSpace(until))
         {
-            if (!DateTimeOffset.TryParse(until, out var parsedUntil))
+            if (!DateTimeOffset.TryParse(until, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedUntil))
             {
                 return $"Error: Invalid 'until' date format: '{until}'. Use ISO 8601 format (e.g., '2024-12-31').";
             }
@@ -816,7 +802,7 @@ public class SearchTools(
         }
         catch (Flurl.Http.FlurlHttpException ex) when (ex.StatusCode == 403)
         {
-            Logger.LogWarning("User search denied - insufficient permissions");
+            Logger.LogWarning(ex, "User search denied - insufficient permissions");
             return """
                 ❌ **Permission Denied**
 
@@ -976,12 +962,6 @@ public class SearchTools(
         return new Regex($"^{regexPattern}$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     }
 
-    private static bool IsBinaryFile(string filePath)
-    {
-        var extension = System.IO.Path.GetExtension(filePath);
-        return BinaryExtensions.Contains(extension);
-    }
-
     private async Task<List<SearchMatch>> SearchFileAsync(
         string projectKey,
         string repositorySlug,
@@ -1095,7 +1075,7 @@ public class SearchTools(
         {
             // No branch specified — search all branches to find commits on feature branches too
             var branches = new List<string>();
-            await foreach (var branch in Client.GetBranchesStreamAsync(projectKey, repoSlug, cancellationToken: cancellationToken).ConfigureAwait(false))
+            await foreach (var branch in Client.Branches(projectKey, repoSlug).StreamAsync(cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (branch.Id is not null)
@@ -1138,15 +1118,12 @@ public class SearchTools(
         HashSet<string> seenCommitIds,
         CancellationToken cancellationToken)
     {
-        await foreach (var commit in Client.GetCommitsStreamAsync(
-            projectKey,
-            repoSlug,
-            until: refName,
-            followRenames: false,
-            ignoreMissing: true,
-            withCounts: false,
-            path: null,
-            cancellationToken: cancellationToken).ConfigureAwait(false))
+        await foreach (var commit in Client.Commits(projectKey, repoSlug, refName)
+            .FollowRenames(false)
+            .IgnoreMissing(true)
+            .WithCounts(false)
+            .StreamAsync(cancellationToken)
+            .ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -1328,14 +1305,13 @@ public class SearchTools(
         var results = new List<PullRequestSearchResult>();
 
         // Use streaming API for early termination when limit is reached
-        await foreach (var pr in Client.GetPullRequestsStreamAsync(
-            projectKey,
-            repoSlug,
-            state: apiState,
-            order: PullRequestOrders.Newest,
-            withAttributes: true,
-            withProperties: false,
-            cancellationToken: cancellationToken).ConfigureAwait(false))
+        await foreach (var pr in Client.PullRequests(projectKey, repoSlug)
+            .InState(apiState)
+            .OrderBy(PullRequestOrders.Newest)
+            .IncludeAttributes(true)
+            .IncludeProperties(false)
+            .StreamAsync(cancellationToken)
+            .ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
 

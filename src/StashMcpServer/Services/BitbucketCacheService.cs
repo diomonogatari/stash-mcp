@@ -5,9 +5,9 @@ using System.Collections.Concurrent;
 
 namespace StashMcpServer.Services;
 
-public class BitbucketCacheService(BitbucketClient client, IServerSettings serverSettings, ILogger<BitbucketCacheService> logger) : IBitbucketCacheService
+public class BitbucketCacheService(IBitbucketClient client, IServerSettings serverSettings, ILogger<BitbucketCacheService> logger) : IBitbucketCacheService
 {
-    private readonly BitbucketClient _client = client;
+    private readonly IBitbucketClient _client = client;
     private readonly IServerSettings _serverSettings = serverSettings;
     private readonly ILogger<BitbucketCacheService> _logger = logger;
 
@@ -15,6 +15,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
     private List<Project> _projects = [];
     private readonly ConcurrentDictionary<string, Project> _projectLookup = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, List<Repository>> _projectRepositories = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Repository> _repositoryLookup = new(StringComparer.OrdinalIgnoreCase);
 
     // Tier 1: User context cache
     private User? _currentUser;
@@ -157,7 +158,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var recentRepos = await _client.GetRecentReposAsync(limit: 25).ConfigureAwait(false);
+            var recentRepos = await _client.GetRecentReposAsync(limit: 25, cancellationToken: cancellationToken).ConfigureAwait(false);
             _recentRepositories = recentRepos.ToList();
             _logger.LogInformation("Cached {Count} recent repositories for current user.", _recentRepositories.Count);
         }
@@ -234,7 +235,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
     private async Task InitializeAllProjectsAsync(CancellationToken cancellationToken)
     {
         var projectsList = new List<Project>();
-        await foreach (var project in _client.GetProjectsStreamAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
+        await foreach (var project in _client.Projects().StreamAsync(cancellationToken).ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
             projectsList.Add(project);
@@ -256,7 +257,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
         {
             try
             {
-                var defaultBranch = await _client.GetDefaultBranchAsync(item.ProjectKey, item.Repository.Slug!);
+                var defaultBranch = await _client.GetDefaultBranchAsync(item.ProjectKey, item.Repository.Slug!, ct);
                 if (defaultBranch is not null)
                 {
                     var key = BuildRepositoryKey(item.ProjectKey, item.Repository.Slug!);
@@ -339,17 +340,21 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
             return null;
         }
 
-        if (_projectRepositories.TryGetValue(projectKey, out var repos))
-        {
-            return repos.FirstOrDefault(r => string.Equals(r.Slug, repositorySlug, StringComparison.OrdinalIgnoreCase));
-        }
-
-        return null;
+        var key = BuildRepositoryKey(projectKey, repositorySlug);
+        _repositoryLookup.TryGetValue(key, out var repo);
+        return repo;
     }
 
     public void StoreRepositories(string projectKey, IEnumerable<Repository> repositories)
     {
-        _projectRepositories[projectKey] = repositories?.ToList() ?? [];
+        var repoList = repositories?.ToList() ?? [];
+        _projectRepositories[projectKey] = repoList;
+
+        foreach (var repo in repoList.Where(r => !string.IsNullOrEmpty(r.Slug)))
+        {
+            var key = BuildRepositoryKey(projectKey, repo.Slug!);
+            _repositoryLookup[key] = repo;
+        }
     }
 
     #endregion
@@ -393,7 +398,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
 
         try
         {
-            var fetched = await _client.GetDefaultBranchAsync(projectKey, repositorySlug).ConfigureAwait(false);
+            var fetched = await _client.GetDefaultBranchAsync(projectKey, repositorySlug, cancellationToken).ConfigureAwait(false);
             if (fetched is not null)
             {
                 _defaultBranches[key] = fetched;

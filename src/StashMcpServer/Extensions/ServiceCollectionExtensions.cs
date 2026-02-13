@@ -34,15 +34,23 @@ public static class ServiceCollectionExtensions
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         });
 
+        // Load and register settings from environment variables
+        var resilienceSettings = ResilienceSettings.FromEnvironment();
+        services.AddSingleton(resilienceSettings);
+
+        var serverSettings = ServerSettings.FromEnvironment();
+        services.AddSingleton(serverSettings);
+        services.AddSingleton<IServerSettings>(serverSettings);
+
         // Add memory cache for TTL-based caching of dynamic data
         services.AddMemoryCache(options =>
         {
-            options.SizeLimit = 1000; // Max number of cache entries
+            options.SizeLimit = resilienceSettings.CacheSizeLimit;
             options.CompactionPercentage = 0.25; // Remove 25% when limit reached
         });
 
-        // Register BitbucketClient using the named HttpClient
-        services.AddSingleton(sp =>
+        // Register IBitbucketClient using the named HttpClient
+        services.AddSingleton<IBitbucketClient>(sp =>
         {
             var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient(BitbucketHttpClientName);
@@ -56,14 +64,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IBitbucketCacheService>(sp => sp.GetRequiredService<BitbucketCacheService>());
         services.AddSingleton<ResilientApiService>();
         services.AddSingleton<IResilientApiService>(sp => sp.GetRequiredService<ResilientApiService>());
-
-        // Load and register settings from environment variables
-        var resilienceSettings = ResilienceSettings.FromEnvironment();
-        services.AddSingleton(resilienceSettings);
-
-        var serverSettings = ServerSettings.FromEnvironment();
-        services.AddSingleton(serverSettings);
-        services.AddSingleton<IServerSettings>(serverSettings);
 
         return services;
     }
