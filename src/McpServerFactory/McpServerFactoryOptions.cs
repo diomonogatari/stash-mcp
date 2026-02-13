@@ -1,6 +1,6 @@
 using ModelContextProtocol.Protocol;
 
-namespace McpServerFactory;
+namespace McpServerFactory.Testing;
 
 public sealed record McpServerFactoryOptions
 {
