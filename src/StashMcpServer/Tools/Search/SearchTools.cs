@@ -176,7 +176,13 @@ public class SearchTools(
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var codeResults = response?.Code?.Values;
+        var codeSearch = response?.Code;
+        if (codeSearch is null)
+        {
+            return null;
+        }
+
+        var codeResults = codeSearch.Values;
         if (codeResults is null || codeResults.Count == 0)
         {
             return null;
@@ -248,9 +254,9 @@ public class SearchTools(
             return null;
         }
 
-        var totalHits = response.Code!.Count;
+        var totalHits = codeSearch.Count;
         return FormatServerSearchResults(matches, projectKey, repositorySlug, query,
-            totalHits, response.Code.IsLastPage, limit);
+            totalHits, codeSearch.IsLastPage, limit);
     }
 
     /// <summary>

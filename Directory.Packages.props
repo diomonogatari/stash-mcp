@@ -1,27 +1,22 @@
 <Project>
-
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- MCP SDK -->
+    <PackageVersion Include="McpServerFactory" Version="0.1.0" />
     <PackageVersion Include="ModelContextProtocol" Version="0.4.0-preview.3" />
-
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Resilience" Version="10.0.0" />
-
     <!-- Logging -->
     <PackageVersion Include="Serilog.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="1.5.0" />
-
     <!-- Analyzers -->
     <PackageVersion Include="Meziantou.Analyzer" Version="2.0.187" />
-
     <!-- Testing -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />
@@ -29,5 +24,4 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
   </ItemGroup>
-
 </Project>

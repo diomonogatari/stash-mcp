@@ -1,6 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/McpServerFactory/McpServerFactory.csproj" />
     <Project Path="src/StashMcpServer/StashMcpServer.csproj" />
   </Folder>
   <Folder Name="/tests/">
