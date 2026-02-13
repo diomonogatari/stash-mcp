@@ -70,7 +70,7 @@ Dashboard tools provide a user-centric view of pull requests relevant to the cur
 Get pull requests that the current user has authored, is reviewing, or is participating in. This is useful for tracking your personal workload across all repositories.
 
 - **Required**: None
-- **Optional**: 
+- **Optional**:
   - `role` (AUTHOR, REVIEWER, PARTICIPANT; default: AUTHOR) - Filter by your role
   - `state` (OPEN, MERGED, DECLINED, ALL; default: OPEN) - Filter by PR state
   - `limit` (default: 25) - Maximum results to return
@@ -80,10 +80,12 @@ Get pull requests that the current user has authored, is reviewing, or is partic
 Get pull requests in your review inbox that need your attention. This shows PRs where you are a reviewer and haven't yet completed your review.
 
 - **Required**: None
-- **Optional**: 
+- **Optional**:
   - `limit` (default: 25) - Maximum results to return
 
 **Output includes:**
+
+
 - Total PRs in inbox
 - PR details: ID, title, repository, author
 - Reviewer status for each PR
@@ -95,7 +97,9 @@ Get repositories the current user has recently accessed. Returns cached reposito
 - **Required**: None
 - **Optional**: None
 
+
 **Output includes:**
+
 - Project key and repository slug
 - Repository name
 
@@ -106,7 +110,9 @@ Get information about the Bitbucket Server instance including version, build num
 - **Required**: None
 - **Optional**: None
 
+
 **Output includes:**
+
 - Server version, display name, and build number
 - Current authenticated user details (name, username, slug, email)
 - Cache statistics: project count, repository count, recent repositories count
@@ -116,9 +122,11 @@ Get information about the Bitbucket Server instance including version, build num
 Get information about the currently authenticated user.
 
 - **Required**: None
+
 - **Optional**: None
 
 **Output includes:**
+
 - Display name and username
 - User slug (for use with other tools)
 - Email address
@@ -134,7 +142,7 @@ Get information about the currently authenticated user.
 List repositories within a specific Bitbucket project.
 
 - **Required**: `projectKey`
-- **Optional**: 
+- **Optional**:
   - `minimalOutput` (default: false) - 🆕 Return compact format with repository slugs only
 
 ### get_repository_overview
@@ -144,13 +152,15 @@ List repositories within a specific Bitbucket project.
 Get comprehensive repository information including default branch, recent branches, tags, and open pull requests in a single call. Use this to quickly understand a repository's state when exploring a new codebase.
 
 - **Required**: `projectKey`, `repositorySlug`
-- **Optional**: 
+- **Optional**:
   - `branchLimit` (default: 10) - Maximum branches to include
   - `tagLimit` (default: 5) - Maximum tags to include
+
   - `includeOpenPRs` (default: true) - Include recent open pull requests
   - `prLimit` (default: 5) - Maximum open PRs to include
 
 **Output includes:**
+
 - Repository name, visibility, SCM type
 - Clone URLs (SSH and HTTPS)
 - Default branch
@@ -171,12 +181,12 @@ Get the raw content of a file in a repository at a specific commit or branch.
 
 ## Git
 
-### list_branches
+### list_branchs
 
 List all branches in a repository to find feature or release branches.
 
 - **Required**: `projectKey`, `repositorySlug`
-- **Optional**: 
+- **Optional**:
   - `filter` - Filter by branch name
   - `baseRef` - Base branch or tag
   - `limit` (default: 25)
@@ -205,14 +215,16 @@ List files in a repository at a specific commit or branch.
 Search for code patterns in repository files. Performs a grep-style search through files and returns matching lines with context.
 
 - **Required**: `projectKey`, `repositorySlug`, `query`
-- **Optional**: 
+- **Optional**:
   - `pathPattern` - Glob pattern to filter files (e.g., '*.cs', 'src/**/*.ts')
   - `at` - Branch or commit to search (default: repository's default branch)
+
   - `isRegex` (default: false) - Use regex matching instead of literal text
   - `caseSensitive` (default: false) - Case-sensitive search
   - `limit` (default: 30, max: 100) - Maximum results to return
 
 **Output includes:**
+
 - File path and line number for each match
 - Matched line with context lines before and after
 - Search statistics (files scanned, skipped)
@@ -224,24 +236,28 @@ Search for code patterns in repository files. Performs a grep-style search throu
 🆕 Search commit history by message text, author, and/or date range. Can search a single repository or all repositories in a project.
 
 - **Required**: `projectKey`
-- **Optional**: 
+- **Optional**:
   - `repositorySlug` - Specific repository (omit to search all repos in project)
   - `messageContains` - Text to match in commit messages (case-insensitive)
   - `author` - Author name or email to filter by (partial match)
+
   - `fromRef` - Branch or commit to start search from
   - `since` - Only commits after this date (ISO 8601 format, e.g., '2024-01-15')
   - `until` - Only commits before this date (ISO 8601 format)
   - `limit` (default: 50, max: 500) - Maximum results to return
 
 **Output includes:**
+
+
 - Commit hash (short and full)
 - Author name and email
 - Commit timestamp
 - Commit message (truncated for readability)
 
 **Use cases:**
+
 - Find commits mentioning a bug or feature: `messageContains="JIRA-123"`
-- Find recent commits by a specific author: `author="jdoe" since="2024-01-01"`
+- Find recent cmmits by a specific author: `author="jdoe" since="2024-01-01"`
 - Audit commits across a project: omit `repositorySlug` for cross-repo search
 
 ### search_pull_requests
@@ -249,8 +265,9 @@ Search for code patterns in repository files. Performs a grep-style search throu
 🆕 Search pull requests by title, description, author, or state across a repository or project.
 
 - **Required**: `projectKey`
-- **Optional**: 
+- **Optional**:
   - `repositorySlug` - Specific repository (omit to search all repos in project)
+
   - `textContains` - Text to match in PR title or description (case-insensitive)
   - `author` - Author username or display name to filter by (partial match)
   - `state` (OPEN, MERGED, DECLINED, ALL; default: ALL) - Filter by PR state
@@ -259,6 +276,8 @@ Search for code patterns in repository files. Performs a grep-style search throu
   - `limit` (default: 25, max: 100) - Maximum results to return
 
 **Output includes:**
+
+
 - PR ID, title, and state (with emoji indicators)
 - Author name
 - Source and target branches
@@ -267,25 +286,30 @@ Search for code patterns in repository files. Performs a grep-style search throu
 - Link to PR (when available)
 
 **Use cases:**
+
 - Find PRs targeting a release branch: `targetBranch="release/1.0"`
 - Find your PRs across a project: `author="jdoe"` (omit repositorySlug)
 - Review merged PRs for a feature: `textContains="payment" state="MERGED"`
+
 
 ### search_users
 
 🆕 Search for Bitbucket users by name, username, or email. Returns user slugs that can be used with other tools.
 
 - **Required**: `query` - Search query (matches name, username, or email)
-- **Optional**: 
+
+- **Optional**:
   - `limit` (default: 25, max: 100) - Maximum results to return
 
 **Output includes:**
+
 - User slug (unique identifier for use with other tools)
 - Display name
 - Email address
 - Active/inactive status
 
 **Use cases:**
+
 - Find reviewers to add to a pull request
 - Look up user information for mentions
 - Verify user slugs before using with other tools
@@ -295,6 +319,7 @@ Search for code patterns in repository files. Performs a grep-style search throu
 ---
 
 ## History
+
 
 ### list_commits
 
@@ -308,6 +333,7 @@ Search for code patterns in repository files. Performs a grep-style search throu
   - `limit` (default: 25, max: 100) - Maximum number of commits to return
 
 **Output includes:**
+
 - Short commit hash
 - Author name
 - Date
@@ -327,6 +353,7 @@ View the files changed in a specific commit.
 - **Required**: `projectKey`, `repositorySlug`, `commitId`
 - **Optional**: `limit` (default: 100)
 
+
 ### get_commit_context
 
 ⭐ **Workflow-Oriented Tool**
@@ -334,16 +361,18 @@ View the files changed in a specific commit.
 Get complete commit details including metadata, changed files, and optionally the full diff in a single call. Use this to understand a commit's full impact when investigating changes.
 
 - **Required**: `projectKey`, `repositorySlug`, `commitId`
-- **Optional**: 
+- **Optional**:
   - `includeDiff` (default: false) - Include file-level diff content for detailed code review
   - `contextLines` (default: 3) - Number of context lines around changes when includeDiff is true
 
 **Output includes:**
-- Full commit hash and short hash
+
+- Full commit hsh and short hash
 - Author and committer information with timestamps
 - Parent commit references
 - Complete commit message
 - Changed files grouped by type (ADD, DELETE, MODIFY, MOVE, COPY)
+
 - Optional: Full diff content
 
 **Use this instead of:** Sequential calls to `get_commit` and `get_commit_changes`
@@ -353,11 +382,12 @@ Get complete commit details including metadata, changed files, and optionally th
 Compare the diff between two refs (branches, tags, or commits) in a repository. Shows what the `from` ref has that the `to` ref does not.
 
 - **Required**: `projectKey`, `repositorySlug`, `from`, `to`
-- **Optional**: 
+- **Optional**:
   - `srcPath` - Limit diff to a specific file or directory path
   - `contextLines` (default: 3) - Number of context lines around each change
 
 **Use cases:**
+
 - Compare a feature branch against main: `from="feature/xyz"`, `to="main"`
 - View changes between tags: `from="v2.0"`, `to="v1.0"`
 - Diff a specific file: `from="feature/xyz"`, `to="main"`, `srcPath="src/app.ts"`
@@ -371,7 +401,7 @@ Compare the diff between two refs (branches, tags, or commits) in a repository. 
 List pull requests for a repository with optional filtering by state.
 
 - **Required**: `projectKey`, `repositorySlug`
-- **Optional**: 
+- **Optional**:
   - `state` (OPEN, MERGED, DECLINED, ALL; default: OPEN)
   - `limit` (default: 25)
   - `minimalOutput` (default: false) - 🆕 Return compact format (PR#, title, state, author)
@@ -383,6 +413,7 @@ Get detailed metadata for a specific pull request including title, description, 
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: None
 
+
 ### get_pull_request_context
 
 ⭐ **Workflow-Oriented Tool**
@@ -390,13 +421,14 @@ Get detailed metadata for a specific pull request including title, description, 
 Get complete pull request details including metadata, reviewers, tasks, comments, activity timeline, and diff summary in a single call. This is the recommended tool for comprehensive PR review context.
 
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
-- **Optional**: 
+- **Optional**:
   - `includeComments` (default: true) - Include comments and discussions
   - `includeDiff` (default: false) - Include diff/changes summary for code review
   - `includeActivity` (default: false) - Include activity timeline (approvals, updates)
   - `includeTasks` (default: true) - Include tasks attached to the PR
 
 **Output includes:**
+
 - PR metadata: title, state, author, dates, source/target branches
 - Description
 - Reviewers with approval status (✅ Approved, 🔧 Needs Work, ⏳ Pending)
@@ -441,6 +473,7 @@ Merge an existing pull request.
 
 Approve a pull request.
 
+
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: None
 
@@ -455,7 +488,9 @@ Get all comments for a specific pull request, including code context and nested 
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: `anchorState` (ACTIVE, ORPHANED, ALL; default: ALL)
 
+
 **Output includes:**
+
 - Comment ID and metadata (author, dates)
 - File path and line number for inline comments
 - Surrounding code context for line-specific comments
@@ -470,7 +505,9 @@ Get only the unresolved/active comments for a pull request. This filters out res
 - **Optional**: None
 
 **Use this tool to:**
+
 - Identify outstanding review items
+
 - Find discussions that need responses
 - Track remaining work before merge
 
@@ -489,6 +526,8 @@ Add a new comment to a pull request. Can be a general comment on the PR or attac
 - **Optional**: `filePath`, `line`, `lineType` (ADDED, REMOVED, CONTEXT; default: ADDED), `fileType` (FROM, TO; auto-derived from lineType if not specified)
 
 **Use cases:**
+
+
 - General PR feedback: Omit `filePath` and `line`
 - Line-specific review: Provide `filePath` and `line`
 - Comment on deleted line: Set `lineType="REMOVED"` (fileType auto-set to FROM)
@@ -508,6 +547,7 @@ List all tasks associated with a pull request. Tasks are displayed grouped by st
 - **Optional**: `state` (OPEN, RESOLVED, ALL; default: ALL)
 
 **Output includes:**
+
 - Summary of open and resolved task counts
 - Task ID, state, author, creation date
 - Task description text
@@ -518,7 +558,7 @@ List all tasks associated with a pull request. Tasks are displayed grouped by st
 Create a new task attached to a comment on a pull request. Tasks are used to track required actions that must be completed before merging.
 
 - **Required**: `commentId`, `text`
-- **Optional**: 
+- **Optional**:
   - `projectKey` - Bitbucket project key for validation
   - `repositorySlug` - Repository slug for validation
   - `pullRequestId` - Pull request ID for validation
@@ -530,11 +570,12 @@ Create a new task attached to a comment on a pull request. Tasks are used to tra
 Update the description text of an existing task. You can also change task state.
 
 - **Required**: `taskId`, `text`
-- **Optional**: `state` (`OPEN` or `RESOLVED`)
+- **Optional**:`state` (`OPEN` or `RESOLVED`)
 
 ### delete_pull_request_task
 
 Delete a task from a pull request.
+
 
 - **Required**: `taskId`
 - **Optional**: None
@@ -550,19 +591,22 @@ Build status tools provide visibility into CI/CD pipeline results for commits an
 Get build status information for a specific commit. Shows CI/CD pipeline results including build name, state, and links.
 
 - **Required**: `commitId`
-- **Optional**: 
+
+- **Optional**:
   - `includeStats` (default: true) - Include summary statistics
   - `limit` (default: 25) - Maximum build results to return
 
 **Output includes:**
+
 - Overall status (PASSING, FAILING, IN PROGRESS, NO BUILDS)
 - Summary: successful, failed, in-progress counts
 - Detailed builds grouped by state with:
-  - Build name and description
+  - Build name nd description
   - Link to build details
   - Timestamp
 
 ### get_pull_request_build_status
+
 
 Get build status for the head commit of a pull request. This is a convenience tool that finds the latest commit in the PR and returns its build status.
 
@@ -570,6 +614,8 @@ Get build status for the head commit of a pull request. This is a convenience to
 - **Optional**: None
 
 **Use this to:**
+
+
 - Check if PR builds are passing before review
 - Verify CI/CD status before merging
 - Debug failing builds on a PR
@@ -579,11 +625,12 @@ Get build status for the head commit of a pull request. This is a convenience to
 🆕 List recent builds for a repository. Shows CI/CD pipeline history across commits on a branch.
 
 - **Required**: `projectKey`, `repositorySlug`
-- **Optional**: 
+- **Optional**:
   - `branch` - Branch name to get builds for (default: repository's default branch)
   - `limit` (default: 25, max: 100) - Maximum number of commits to check for builds
 
 **Output includes:**
+
 - Summary of build health across analyzed commits
 - Overall status (ALL PASSING, SOME FAILING, BUILDS IN PROGRESS, NO BUILDS)
 - For each commit:
@@ -592,6 +639,7 @@ Get build status for the head commit of a pull request. This is a convenience to
   - Build status counts (✅ successful, ❌ failed, ⏳ in progress)
 
 **Use this to:**
+
 - Monitor build stability over time
 - Identify which commits broke the build
 - Track CI/CD health for a branch
