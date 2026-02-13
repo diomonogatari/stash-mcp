@@ -31,6 +31,7 @@
 | Pull Requests | [get_pull_request_diff](#get_pull_request_diff) | Get the diff text for a specific pull request |
 | Pull Requests | [create_pull_request](#create_pull_request) | Create a new pull request from source to target branch |
 | Pull Requests | [update_pull_request](#update_pull_request) | Update pull request metadata (title, description, reviewers) |
+| Pull Requests | [merge_pull_request](#merge_pull_request) | Merge a pull request with optional message/strategy |
 | Pull Requests | [approve_pull_request](#approve_pull_request) | Approve a pull request |
 | Comments | [get_pull_request_comments](#get_pull_request_comments) | Get all comments for a pull request with code context |
 | Comments | [get_pull_request_unresolved_comments](#get_pull_request_unresolved_comments) | Get only unresolved/active comments |
@@ -38,7 +39,7 @@
 | Comments | [add_pull_request_comment](#add_pull_request_comment) | Add a new comment (general or line-specific) |
 | Tasks | [get_pull_request_tasks](#get_pull_request_tasks) | List tasks attached to a pull request |
 | Tasks | [create_pull_request_task](#create_pull_request_task) | Create a task attached to a comment |
-| Tasks | [update_pull_request_task](#update_pull_request_task) | Update task description |
+| Tasks | [update_pull_request_task](#update_pull_request_task) | Update task description and optional state |
 | Tasks | [delete_pull_request_task](#delete_pull_request_task) | Delete a task |
 | Builds | [get_build_status](#get_build_status) | Get CI/CD build status for a commit |
 | Builds | [get_pull_request_build_status](#get_pull_request_build_status) | Get build status for PR head commit |
@@ -427,6 +428,15 @@ Update pull request metadata such as title, description, or reviewers.
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: `title`, `description`, `addReviewers`, `removeReviewers`
 
+### merge_pull_request
+
+Merge an existing pull request.
+
+- **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
+- **Optional**:
+  - `message` - Custom merge commit message
+  - `strategy` - Merge strategy override (passed through to Bitbucket Server)
+
 ### approve_pull_request
 
 Approve a pull request.
@@ -517,10 +527,10 @@ Create a new task attached to a comment on a pull request. Tasks are used to tra
 
 ### update_pull_request_task
 
-Update the description text of an existing task.
+Update the description text of an existing task. You can also change task state.
 
 - **Required**: `taskId`, `text`
-- **Optional**: None
+- **Optional**: `state` (`OPEN` or `RESOLVED`)
 
 ### delete_pull_request_task
 
