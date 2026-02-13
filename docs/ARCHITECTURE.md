@@ -50,6 +50,14 @@ src/StashMcpServer/
     ├── Builds/BuildTools.cs           # get_build_status, get_pull_request_build_status, list_builds
     ├── Dashboard/DashboardTools.cs    # get_my_pull_requests, get_inbox_pull_requests
     └── Integrations/IntegrationTools.cs # get_pr_jira_issues
+
+tests/StashMcpServer.IntegrationTests/
+├── StashMcpServer.IntegrationTests.csproj
+├── StashMcpTestFactory.cs             # stash-mcp specific factory subclass
+├── ToolDiscoveryTests.cs              # Tool registration/discovery coverage
+├── ProjectToolsIntegrationTests.cs    # Project tool integration coverage
+├── PullRequestToolsIntegrationTests.cs # Pull request write-guard coverage
+└── EdgeCaseTests.cs                   # Error handling and lifecycle coverage
 ```
 
 ### Layers
@@ -58,39 +66,39 @@ The application follows a layered architecture with clear separation of concerns
 
 ```
         ┌────────────────────────────────────────┐
-        │           MCP Transport Layer           │
-        │              stdio (JSON-RPC)            │
+        │           MCP Transport Layer          │
+        │              stdio (JSON-RPC)          │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │           Tool Layer (9 classes)         │
-        │   Each class: [McpServerToolType]        │
-        │   Inherits ToolBase for shared helpers   │
-        │   Discovered via assembly scanning       │
+        │           Tool Layer (9 classes)       │
+        │   Each class: [McpServerToolType]      │
+        │   Inherits ToolBase for shared helpers │
+        │   Discovered via assembly scanning     │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │         Formatting Layer                 │
-        │   DiffFormatter, ResponseTruncation,     │
-        │   MinimalOutputFormatter                 │
+        │         Formatting Layer               │
+        │   DiffFormatter, ResponseTruncation,   │
+        │   MinimalOutputFormatter               │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │       ResilientApiService                │
-        │   Polly: retry + circuit breaker         │
-        │   Graceful degradation with stale cache  │
+        │       ResilientApiService              │
+        │   Polly: retry + circuit breaker       │
+        │   Graceful degradation with stale cache│
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │       BitbucketCacheService              │
-        │   IMemoryCache with configurable TTL     │
-        │   ConcurrentDict for static data         │
+        │       BitbucketCacheService            │
+        │   IMemoryCache with configurable TTL   │
+        │   ConcurrentDict for static data       │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │     BitbucketServer.Net Client           │
-        │     REST API calls to Bitbucket Server   │
-        └──────────────────────────────────────────┘
+        │     BitbucketServer.Net Client         │
+        │     REST API calls to Bitbucket Server │
+        └────────────────────────────────────────┘
 ```
 
 ### Key Design Decisions
@@ -121,6 +129,23 @@ Tools that reference non-cached projects fall through gracefully: `NormalizeProj
 - Graceful degradation to stale cached data when the API is unavailable
 
 **Response Safety**: Output is truncated at 50KB to prevent context window overflow in AI clients.
+
+### Integration Testing Architecture
+
+stash-mcp now includes a dedicated integration testing stack built around
+`McpServerFactory`:
+
+- `McpServerFactory` creates an in-memory client/server MCP connection using
+    `System.IO.Pipelines.Pipe` and stream transports.
+- `StashMcpTestFactory` (in integration tests) registers all stash tools via
+    `WithToolsFromAssembly(...)` and replaces infrastructure dependencies with
+    test doubles.
+- Integration tests call tools through real MCP protocol flow (`ListToolsAsync`,
+    `CallToolAsync`) instead of directly invoking tool methods.
+
+This gives end-to-end confidence for tool registration, parameter binding,
+result serialization, read-only guards, and lifecycle/disposal behavior while
+remaining fully local and deterministic.
 
 ### Dependencies
 

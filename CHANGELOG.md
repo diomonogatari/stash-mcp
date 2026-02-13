@@ -9,25 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New `merge_pull_request` MCP tool with read-only mode guard
-- Optional `state` parameter on `update_pull_request_task` (`OPEN` or `RESOLVED`)
+- New `tests/StashMcpServer.IntegrationTests` project for end-to-end MCP integration testing
+- In-memory MCP test harness via `McpServerFactory` NuGet package (`0.1.0`)
+- Integration coverage for:
+  - MCP tool discovery and registration
+  - `ProjectTools` behavior
+  - Pull request tool behavior in read-only mode
+  - Edge-case lifecycle scenarios for test host/client setup
+- `StashMcpTestFactory` with mocked Bitbucket dependencies for deterministic integration tests
 
 ### Changed
 
-- Updated `lib/Bitbucket.Net` submodule to latest `main`
-- Migrated pull request/task write operations to v1.0.0 request DTOs:
-	- `CreatePullRequestRequest`
-	- `UpdatePullRequestRequest`
-	- `CreateTaskRequest`
-	- `UpdateTaskRequest`
-- Migrated dependency injection and consumers from concrete `BitbucketClient` to `IBitbucketClient`
-- Adopted fluent query builders in high-value read paths (pull requests, commits, branches, projects)
-- Removed redundant `.ToList()` materialization where paginated `Items` already provide `IReadOnlyList<T>`
+- Added central package versioning entry for `McpServerFactory` in `Directory.Packages.props`
+- Added integration test project to `stash-mcp.slnx`
+- Updated architecture and tooling documentation to reflect current implementation:
+  - `docs/ARCHITECTURE.md`
+  - `docs/TOOLSET.md`
+  - `src/StashMcpServer/Services/ServerInstructions.txt`
+- Tightened model serialization test coverage for code search and diff payloads
 
 ### Fixed
 
-- Pull request merge/create/update and task create/update compatibility with Bitbucket.Net v1.0.0 breaking API changes
-- Pull request cache invalidation coverage after merge operations
+- Null-safety in server-side search result handling (`SearchTools`) to prevent nullable dereference warnings
+- Markdown link-fragment correctness in `docs/TOOLSET.md` (`list_branches` section anchor)
 
 ## [1.1.0] - 2026-02-10
 

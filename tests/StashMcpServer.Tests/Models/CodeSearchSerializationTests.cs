@@ -147,13 +147,20 @@ public class CodeSearchSerializationTests
         var result = JsonSerializer.Deserialize<CodeSearchResponse>(json, _options);
 
         Assert.NotNull(result);
-        var hit = result!.Code!.Values[0];
-        Assert.Equal(2, hit.HitContexts!.Count);
+        Assert.NotNull(result.Code);
+        Assert.NotNull(result.Code.Values);
+
+        var hit = Assert.Single(result.Code.Values);
+
+        Assert.NotNull(hit.HitContexts);
+        Assert.Equal(2, hit.HitContexts.Count);
         Assert.Equal(3, hit.HitContexts[0].Count);
         Assert.Single(hit.HitContexts[1]);
-        Assert.Single(hit.PathMatches!);
-        Assert.Equal(0, hit.PathMatches[0].Start);
-        Assert.Equal(4, hit.PathMatches[0].Length);
+
+        Assert.NotNull(hit.PathMatches);
+        var pathMatch = Assert.Single(hit.PathMatches);
+        Assert.Equal(0, pathMatch.Start);
+        Assert.Equal(4, pathMatch.Length);
     }
 
     [Fact]

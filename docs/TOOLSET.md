@@ -85,7 +85,6 @@ Get pull requests in your review inbox that need your attention. This shows PRs 
 
 **Output includes:**
 
-
 - Total PRs in inbox
 - PR details: ID, title, repository, author
 - Reviewer status for each PR
@@ -96,7 +95,6 @@ Get repositories the current user has recently accessed. Returns cached reposito
 
 - **Required**: None
 - **Optional**: None
-
 
 **Output includes:**
 
@@ -109,7 +107,6 @@ Get information about the Bitbucket Server instance including version, build num
 
 - **Required**: None
 - **Optional**: None
-
 
 **Output includes:**
 
@@ -181,7 +178,7 @@ Get the raw content of a file in a repository at a specific commit or branch.
 
 ## Git
 
-### list_branchs
+### list_branches
 
 List all branches in a repository to find feature or release branches.
 
@@ -248,7 +245,6 @@ Search for code patterns in repository files. Performs a grep-style search throu
 
 **Output includes:**
 
-
 - Commit hash (short and full)
 - Author name and email
 - Commit timestamp
@@ -277,7 +273,6 @@ Search for code patterns in repository files. Performs a grep-style search throu
 
 **Output includes:**
 
-
 - PR ID, title, and state (with emoji indicators)
 - Author name
 - Source and target branches
@@ -290,7 +285,6 @@ Search for code patterns in repository files. Performs a grep-style search throu
 - Find PRs targeting a release branch: `targetBranch="release/1.0"`
 - Find your PRs across a project: `author="jdoe"` (omit repositorySlug)
 - Review merged PRs for a feature: `textContains="payment" state="MERGED"`
-
 
 ### search_users
 
@@ -319,7 +313,6 @@ Search for code patterns in repository files. Performs a grep-style search throu
 ---
 
 ## History
-
 
 ### list_commits
 
@@ -352,7 +345,6 @@ View the files changed in a specific commit.
 
 - **Required**: `projectKey`, `repositorySlug`, `commitId`
 - **Optional**: `limit` (default: 100)
-
 
 ### get_commit_context
 
@@ -413,7 +405,6 @@ Get detailed metadata for a specific pull request including title, description, 
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: None
 
-
 ### get_pull_request_context
 
 ⭐ **Workflow-Oriented Tool**
@@ -473,7 +464,6 @@ Merge an existing pull request.
 
 Approve a pull request.
 
-
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: None
 
@@ -487,7 +477,6 @@ Get all comments for a specific pull request, including code context and nested 
 
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: `anchorState` (ACTIVE, ORPHANED, ALL; default: ALL)
-
 
 **Output includes:**
 
@@ -526,7 +515,6 @@ Add a new comment to a pull request. Can be a general comment on the PR or attac
 - **Optional**: `filePath`, `line`, `lineType` (ADDED, REMOVED, CONTEXT; default: ADDED), `fileType` (FROM, TO; auto-derived from lineType if not specified)
 
 **Use cases:**
-
 
 - General PR feedback: Omit `filePath` and `line`
 - Line-specific review: Provide `filePath` and `line`
@@ -576,7 +564,6 @@ Update the description text of an existing task. You can also change task state.
 
 Delete a task from a pull request.
 
-
 - **Required**: `taskId`
 - **Optional**: None
 
@@ -607,14 +594,12 @@ Get build status information for a specific commit. Shows CI/CD pipeline results
 
 ### get_pull_request_build_status
 
-
 Get build status for the head commit of a pull request. This is a convenience tool that finds the latest commit in the PR and returns its build status.
 
 - **Required**: `projectKey`, `repositorySlug`, `pullRequestId`
 - **Optional**: None
 
 **Use this to:**
-
 
 - Check if PR builds are passing before review
 - Verify CI/CD status before merging

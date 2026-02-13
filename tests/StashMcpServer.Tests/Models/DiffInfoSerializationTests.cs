@@ -101,14 +101,20 @@ public class DiffInfoSerializationTests
         var result = JsonSerializer.Deserialize<Differences>(json, _options);
         Assert.NotNull(result);
         Assert.True(result.Truncated);
-        Assert.Single(result.Diffs);
 
-        var diff = result.Diffs[0];
-        Assert.Single(diff.Hunks);
-        Assert.True(diff.Hunks[0].Truncated);
-        Assert.Single(diff.Hunks[0].Segments);
-        Assert.True(diff.Hunks[0].Segments[0].Truncated);
-        Assert.Single(diff.Hunks[0].Segments[0].Lines);
-        Assert.False(diff.Hunks[0].Segments[0].Lines[0].Truncated);
+        Assert.NotNull(result.Diffs);
+        var diff = Assert.Single(result.Diffs);
+
+        Assert.NotNull(diff.Hunks);
+        var hunk = Assert.Single(diff.Hunks);
+        Assert.True(hunk.Truncated);
+
+        Assert.NotNull(hunk.Segments);
+        var segment = Assert.Single(hunk.Segments);
+        Assert.True(segment.Truncated);
+
+        Assert.NotNull(segment.Lines);
+        var line = Assert.Single(segment.Lines);
+        Assert.False(line.Truncated);
     }
 }
