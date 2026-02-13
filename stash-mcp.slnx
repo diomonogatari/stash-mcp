@@ -4,6 +4,7 @@
     <Project Path="src/StashMcpServer/StashMcpServer.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/StashMcpServer.IntegrationTests/StashMcpServer.IntegrationTests.csproj" />
     <Project Path="tests/StashMcpServer.Tests/StashMcpServer.Tests.csproj" />
   </Folder>
   <Folder Name="/lib/">
