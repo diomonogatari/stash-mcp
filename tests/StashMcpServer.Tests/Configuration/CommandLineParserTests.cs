@@ -128,3 +128,4 @@ public class CommandLineParserTests
 
         Assert.Equal(expected, result);
     }
+}

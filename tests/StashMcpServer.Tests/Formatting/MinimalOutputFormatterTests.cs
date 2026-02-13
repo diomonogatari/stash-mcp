@@ -250,3 +250,4 @@ public class MinimalOutputFormatterTests
         Assert.Contains("- abc1234: First line", result);
         Assert.DoesNotContain("Second line", result);
     }
+}

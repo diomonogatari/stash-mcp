@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Bitbucket.Net.Common.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
 using ModelContextProtocol;
