@@ -51,13 +51,6 @@ src/StashMcpServer/
     ├── Dashboard/DashboardTools.cs    # get_my_pull_requests, get_inbox_pull_requests
     └── Integrations/IntegrationTools.cs # get_pr_jira_issues
 
-src/McpServerFactory/
-├── McpServerFactory.csproj            # Reusable MCP integration testing library
-├── McpServerFactory.cs                # In-memory host + client wiring factory
-├── McpServerFactoryOptions.cs         # Test server configuration options
-├── McpTestClient.cs                   # Optional convenience wrapper for tests
-└── README.md                          # Usage and API guide
-
 tests/StashMcpServer.IntegrationTests/
 ├── StashMcpServer.IntegrationTests.csproj
 ├── StashMcpTestFactory.cs             # stash-mcp specific factory subclass
@@ -73,39 +66,39 @@ The application follows a layered architecture with clear separation of concerns
 
 ```
         ┌────────────────────────────────────────┐
-        │           MCP Transport Layer           │
-        │              stdio (JSON-RPC)            │
+        │           MCP Transport Layer          │
+        │              stdio (JSON-RPC)          │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │           Tool Layer (9 classes)         │
-        │   Each class: [McpServerToolType]        │
-        │   Inherits ToolBase for shared helpers   │
-        │   Discovered via assembly scanning       │
+        │           Tool Layer (9 classes)       │
+        │   Each class: [McpServerToolType]      │
+        │   Inherits ToolBase for shared helpers │
+        │   Discovered via assembly scanning     │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │         Formatting Layer                 │
-        │   DiffFormatter, ResponseTruncation,     │
-        │   MinimalOutputFormatter                 │
+        │         Formatting Layer               │
+        │   DiffFormatter, ResponseTruncation,   │
+        │   MinimalOutputFormatter               │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │       ResilientApiService                │
-        │   Polly: retry + circuit breaker         │
-        │   Graceful degradation with stale cache  │
+        │       ResilientApiService              │
+        │   Polly: retry + circuit breaker       │
+        │   Graceful degradation with stale cache│
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │       BitbucketCacheService              │
-        │   IMemoryCache with configurable TTL     │
-        │   ConcurrentDict for static data         │
+        │       BitbucketCacheService            │
+        │   IMemoryCache with configurable TTL   │
+        │   ConcurrentDict for static data       │
         └─────────────────┬──────────────────────┘
                           │
         ┌─────────────────▼──────────────────────┐
-        │     BitbucketServer.Net Client           │
-        │     REST API calls to Bitbucket Server   │
-        └──────────────────────────────────────────┘
+        │     BitbucketServer.Net Client         │
+        │     REST API calls to Bitbucket Server │
+        └────────────────────────────────────────┘
 ```
 
 ### Key Design Decisions

@@ -16,6 +16,9 @@ When the user hasn't specified a project or repository:
 For user-centric views of their work:
 - `get_my_pull_requests` - Find PRs you authored, are reviewing, or participating in
 - `get_inbox_pull_requests` - Find PRs in your review inbox needing attention
+- `get_recent_repositories` - Find repositories you've recently accessed
+- `get_server_info` - Get server version/build info and cache statistics
+- `get_current_user` - Get current authenticated user details
 
 ### Pull Request Analysis
 
@@ -35,7 +38,9 @@ Use `get_commit_context` with `includeDiff=true` - provides commit details, chan
 
 **For specific commit data:**
 - `get_commit` - Quick commit metadata only
+- `list_commits` - List commit history for a repository/ref
 - `get_commit_changes` - List of changed files without diff content
+- `compare_refs` - Compare two refs (branches/tags/commits)
 
 ### Search Operations
 
@@ -53,6 +58,9 @@ Use `get_commit_context` with `includeDiff=true` - provides commit details, chan
 - `search_pull_requests` - Search by title, description, author, state
   - Omit `repositorySlug` for cross-repository search
 
+**Searching for users:**
+- `search_users` - Search users by name, username, or email
+
 ### Creating & Managing PRs
 
 **Creating PRs:**
@@ -61,6 +69,7 @@ Use `get_commit_context` with `includeDiff=true` - provides commit details, chan
 
 **Updating PRs:**
 - `update_pull_request` - Update title, description, add/remove reviewers
+- `merge_pull_request` - Merge a pull request (optional message/strategy)
 - `approve_pull_request` - Approve a PR
 
 ### Comments & Tasks
@@ -77,12 +86,18 @@ Use `get_commit_context` with `includeDiff=true` - provides commit details, chan
 - Tasks are anchored to comments and track required actions before merge
 - `get_pull_request_tasks` - List all tasks (open/resolved)
 - `create_pull_request_task` - Create task on a comment (use `get_pull_request_comments` first to find comment IDs)
-- Note: Task state changes (resolve/reopen) are done through Bitbucket UI, not API
+- `update_pull_request_task` - Update task text and optional state (`OPEN`/`RESOLVED`)
+- `delete_pull_request_task` - Delete a task
 
 ### Build Status
 
 - `get_build_status` - CI/CD status for any commit (by commit hash)
 - `get_pull_request_build_status` - Convenience tool for PR head commit
+- `list_builds` - List recent repository builds/health across commits
+
+### Integrations
+
+- `get_pull_request_jira_issues` - List Jira issues linked to a pull request
 
 ### Output Optimization
 
@@ -107,8 +122,9 @@ For list operations, use `minimalOutput=true` to reduce response size:
 
 ### Repository Exploration
 1. `get_repository_overview` for quick overview
-2. `list_files` to browse file structure
-3. `get_file_content` to read specific files
+2. `list_branches` / `list_tags` to inspect branch and release/tag state
+3. `list_files` to browse file structure
+4. `get_file_content` to read specific files
 
 ### PR Creation Workflow
 1. Ensure branch is pushed to remote
