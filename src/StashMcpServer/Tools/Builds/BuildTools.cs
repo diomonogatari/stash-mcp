@@ -14,7 +14,7 @@ public class BuildTools(
     ILogger<BuildTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -68,11 +68,9 @@ public class BuildTools(
         {
             var paginatedCommits = await ResilientApi.ExecuteAsync(
                 cacheKey,
-                async _ => await Client.GetCommitsStreamAsync(
-                    normalizedProjectKey, normalizedSlug,
-                    until: branchRef,
-                    merges: MergeCommits.Include,
-                    cancellationToken: cancellationToken)
+                async _ => await Client.Commits(normalizedProjectKey, normalizedSlug, branchRef)
+                    .Merges(MergeCommits.Include)
+                    .StreamAsync(cancellationToken)
                     .TakeWithPaginationAsync(cappedLimit, cancellationToken)
                     .ConfigureAwait(false),
                 cancellationToken: cancellationToken)

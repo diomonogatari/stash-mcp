@@ -15,7 +15,7 @@ public class SearchTools(
     ILogger<SearchTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -1075,7 +1075,7 @@ public class SearchTools(
         {
             // No branch specified — search all branches to find commits on feature branches too
             var branches = new List<string>();
-            await foreach (var branch in Client.GetBranchesStreamAsync(projectKey, repoSlug, cancellationToken: cancellationToken).ConfigureAwait(false))
+            await foreach (var branch in Client.Branches(projectKey, repoSlug).StreamAsync(cancellationToken).ConfigureAwait(false))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (branch.Id is not null)
@@ -1118,15 +1118,12 @@ public class SearchTools(
         HashSet<string> seenCommitIds,
         CancellationToken cancellationToken)
     {
-        await foreach (var commit in Client.GetCommitsStreamAsync(
-            projectKey,
-            repoSlug,
-            until: refName,
-            followRenames: false,
-            ignoreMissing: true,
-            withCounts: false,
-            path: null,
-            cancellationToken: cancellationToken).ConfigureAwait(false))
+        await foreach (var commit in Client.Commits(projectKey, repoSlug, refName)
+            .FollowRenames(false)
+            .IgnoreMissing(true)
+            .WithCounts(false)
+            .StreamAsync(cancellationToken)
+            .ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -1308,14 +1305,13 @@ public class SearchTools(
         var results = new List<PullRequestSearchResult>();
 
         // Use streaming API for early termination when limit is reached
-        await foreach (var pr in Client.GetPullRequestsStreamAsync(
-            projectKey,
-            repoSlug,
-            state: apiState,
-            order: PullRequestOrders.Newest,
-            withAttributes: true,
-            withProperties: false,
-            cancellationToken: cancellationToken).ConfigureAwait(false))
+        await foreach (var pr in Client.PullRequests(projectKey, repoSlug)
+            .InState(apiState)
+            .OrderBy(PullRequestOrders.Newest)
+            .IncludeAttributes(true)
+            .IncludeProperties(false)
+            .StreamAsync(cancellationToken)
+            .ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
 

@@ -13,7 +13,7 @@ public class RepositoryTools(
     ILogger<RepositoryTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -148,10 +148,8 @@ public class RepositoryTools(
         var branchesCacheKey = $"{CacheKeys.Branches(normalizedProjectKey, normalizedSlug)}:limit={cappedBranchLimit}";
         var branchesTask = ResilientApi.ExecuteAsync(
             branchesCacheKey,
-            async _ => await Client.GetBranchesStreamAsync(
-                normalizedProjectKey,
-                normalizedSlug,
-                cancellationToken: cancellationToken)
+            async _ => await Client.Branches(normalizedProjectKey, normalizedSlug)
+                .StreamAsync(cancellationToken)
                 .TakeWithPaginationAsync(cappedBranchLimit, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken);
@@ -173,11 +171,9 @@ public class RepositoryTools(
         var prsTask = includeOpenPRs
             ? ResilientApi.ExecuteAsync(
                 prsCacheKey,
-                async _ => await Client.GetPullRequestsStreamAsync(
-                    normalizedProjectKey,
-                    normalizedSlug,
-                    state: Bitbucket.Net.Models.Core.Projects.PullRequestStates.Open,
-                    cancellationToken: cancellationToken)
+                async _ => await Client.PullRequests(normalizedProjectKey, normalizedSlug)
+                    .InState(Bitbucket.Net.Models.Core.Projects.PullRequestStates.Open)
+                    .StreamAsync(cancellationToken)
                     .TakeWithPaginationAsync(cappedPrLimit, cancellationToken)
                     .ConfigureAwait(false),
                 cancellationToken: cancellationToken)
@@ -185,9 +181,9 @@ public class RepositoryTools(
 
         await Task.WhenAll(branchesTask, tagsTask, prsTask).ConfigureAwait(false);
 
-        var branches = (await branchesTask.ConfigureAwait(false)).Items.ToList();
-        var tags = (await tagsTask.ConfigureAwait(false)).Items.ToList();
-        var prs = (await prsTask.ConfigureAwait(false)).Items.ToList();
+        var branches = (await branchesTask.ConfigureAwait(false)).Items;
+        var tags = (await tagsTask.ConfigureAwait(false)).Items;
+        var prs = (await prsTask.ConfigureAwait(false)).Items;
 
         // Get cached repository info
         var repository = CacheService.FindRepository(normalizedProjectKey, normalizedSlug);

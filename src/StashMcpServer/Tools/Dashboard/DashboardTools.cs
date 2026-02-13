@@ -13,7 +13,7 @@ public class DashboardTools(
     ILogger<DashboardTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -47,7 +47,7 @@ public class DashboardTools(
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var prList = paginatedPrs.Items.ToList();
+        var prList = paginatedPrs.Items;
 
         if (prList.Count == 0)
         {
@@ -111,7 +111,7 @@ public class DashboardTools(
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var prList = paginatedPrs.Items.ToList();
+        var prList = paginatedPrs.Items;
 
         if (prList.Count == 0)
         {

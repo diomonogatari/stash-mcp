@@ -14,7 +14,7 @@ public class GitTools(
     ILogger<GitTools> logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
@@ -43,17 +43,15 @@ public class GitTools(
         var cacheKey = $"{CacheKeys.Branches(normalizedProjectKey, normalizedSlug)}:filter={filter}:limit={cappedLimit}";
         var paginatedBranches = await ResilientApi.ExecuteAsync(
             cacheKey,
-            async _ => await Client.GetBranchesStreamAsync(
-                normalizedProjectKey,
-                normalizedSlug,
-                filterText: filter,
-                cancellationToken: cancellationToken)
+            async _ => await Client.Branches(normalizedProjectKey, normalizedSlug)
+                .FilterBy(filter ?? string.Empty)
+                .StreamAsync(cancellationToken)
                 .TakeWithPaginationAsync(cappedLimit, cancellationToken)
                 .ConfigureAwait(false),
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var branches = paginatedBranches.Items.ToList();
+        var branches = paginatedBranches.Items;
 
         if (branches.Count == 0)
         {
@@ -127,7 +125,7 @@ public class GitTools(
             cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var tags = paginatedTags.Items.ToList();
+        var tags = paginatedTags.Items;
 
         if (tags.Count == 0)
         {

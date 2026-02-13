@@ -5,9 +5,9 @@ using System.Collections.Concurrent;
 
 namespace StashMcpServer.Services;
 
-public class BitbucketCacheService(BitbucketClient client, IServerSettings serverSettings, ILogger<BitbucketCacheService> logger) : IBitbucketCacheService
+public class BitbucketCacheService(IBitbucketClient client, IServerSettings serverSettings, ILogger<BitbucketCacheService> logger) : IBitbucketCacheService
 {
-    private readonly BitbucketClient _client = client;
+    private readonly IBitbucketClient _client = client;
     private readonly IServerSettings _serverSettings = serverSettings;
     private readonly ILogger<BitbucketCacheService> _logger = logger;
 
@@ -235,7 +235,7 @@ public class BitbucketCacheService(BitbucketClient client, IServerSettings serve
     private async Task InitializeAllProjectsAsync(CancellationToken cancellationToken)
     {
         var projectsList = new List<Project>();
-        await foreach (var project in _client.GetProjectsStreamAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
+        await foreach (var project in _client.Projects().StreamAsync(cancellationToken).ConfigureAwait(false))
         {
             cancellationToken.ThrowIfCancellationRequested();
             projectsList.Add(project);

@@ -11,13 +11,13 @@ public abstract class ToolBase(
     ILogger logger,
     IBitbucketCacheService cacheService,
     IResilientApiService resilientApi,
-    BitbucketClient client,
+    IBitbucketClient client,
     IServerSettings serverSettings)
 {
     protected ILogger Logger { get; } = logger ?? throw new ArgumentNullException(nameof(logger));
     protected IBitbucketCacheService CacheService { get; } = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
     protected IResilientApiService ResilientApi { get; } = resilientApi ?? throw new ArgumentNullException(nameof(resilientApi));
-    protected BitbucketClient Client { get; } = client ?? throw new ArgumentNullException(nameof(client));
+    protected IBitbucketClient Client { get; } = client ?? throw new ArgumentNullException(nameof(client));
     protected IServerSettings ServerSettings { get; } = serverSettings ?? throw new ArgumentNullException(nameof(serverSettings));
 
     /// <summary>

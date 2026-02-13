@@ -49,8 +49,8 @@ public static class ServiceCollectionExtensions
             options.CompactionPercentage = 0.25; // Remove 25% when limit reached
         });
 
-        // Register BitbucketClient using the named HttpClient
-        services.AddSingleton(sp =>
+        // Register IBitbucketClient using the named HttpClient
+        services.AddSingleton<IBitbucketClient>(sp =>
         {
             var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient(BitbucketHttpClientName);

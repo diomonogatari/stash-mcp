@@ -12,7 +12,7 @@ public class ToolBaseTests
 {
     private readonly IBitbucketCacheService _cacheService = Substitute.For<IBitbucketCacheService>();
     private readonly IResilientApiService _resilientApi = Substitute.For<IResilientApiService>();
-    private readonly BitbucketClient _client = new("http://localhost", () => "dummy");
+    private readonly IBitbucketClient _client = Substitute.For<IBitbucketClient>();
     private readonly IServerSettings _serverSettings = Substitute.For<IServerSettings>();
     private readonly TestToolBase _sut;
 
@@ -158,7 +158,7 @@ public class ToolBaseTests
         ILogger<TestToolBase> logger,
         IBitbucketCacheService cacheService,
         IResilientApiService resilientApi,
-        BitbucketClient client,
+        IBitbucketClient client,
         IServerSettings serverSettings)
         : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
     {

@@ -10,7 +10,7 @@ namespace StashMcpServer.Services;
 /// making startup logs visible in VS Code's MCP output panel.
 /// </summary>
 internal sealed class StartupService(
-    BitbucketClient bitbucketClient,
+    IBitbucketClient bitbucketClient,
     BitbucketCacheService cacheService,
     ResilienceSettings resilienceSettings,
     ServerSettings serverSettings,
