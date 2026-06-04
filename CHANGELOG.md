@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Setup documentation for using the server with Claude Desktop (`mcpServers` config) and Claude Code (`claude mcp add`)
+- Exact tool-count assertion in `ToolDiscoveryTests` to prevent documentation/source drift
+
+### Fixed
+
+- Corrected the documented tool count from 40 to 41 across the README, Dockerfile label, and Docker MCP catalog metadata
+- Added the missing `merge_pull_request` entry to `registry/docker-mcp/tools.json`
+
 ## [1.2.0] - 2026-02-13
 
 ### Added

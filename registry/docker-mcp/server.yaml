@@ -12,7 +12,7 @@ meta:
 about:
   title: Bitbucket Server (Stash)
   description: >-
-    MCP server for Atlassian Bitbucket Server (Stash) with 40 tools covering
+    MCP server for Atlassian Bitbucket Server (Stash) with 41 tools covering
     repositories, pull requests, code review, commits, builds, search, and Jira
     integration. Features workflow-optimized tools that reduce multiple API calls
     to a single invocation.

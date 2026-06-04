@@ -8,11 +8,11 @@
 [![license](https://img.shields.io/github/license/diomonogatari/stash-mcp)](https://github.com/diomonogatari/stash-mcp/blob/main/LICENSE)
 ![.NET 10.0](https://img.shields.io/badge/.net-10.0-512BD4)
 
-A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image on [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp). It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 40 purpose-built tools.
+A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), distributed as a Docker image on [Docker Hub](https://hub.docker.com/r/diomonogatari/stash-mcp). It gives AI assistants access to your repositories, pull requests, code reviews, builds, and search — through 41 purpose-built tools.
 
 ## Features
 
-**40 tools** covering comprehensive Bitbucket Server workflows:
+**41 tools** covering comprehensive Bitbucket Server workflows:
 
 | Category | Tools | Highlights |
 |----------|-------|-----------|
@@ -22,7 +22,7 @@ A Model Context Protocol (MCP) server for Atlassian Bitbucket Server (Stash), di
 | **Git** | 3 | Branches, tags, file listing |
 | **Search** | 4 | Code, commits, PRs, users |
 | **History** | 5 | List/inspect commits, compare refs, full commit context |
-| **Pull Requests** | 7 | List/get/context/diff + create/update + approve |
+| **Pull Requests** | 8 | List/get/context/diff + create/update/merge + approve |
 | **Comments** | 4 | Read, write, reply with code context |
 | **Tasks** | 4 | Full CRUD for review tasks |
 | **Builds** | 3 | CI/CD status per commit/PR/repo |
@@ -86,6 +86,62 @@ That's it. VS Code will pull the image on first use and start the server automat
 > If you must use `latest`, force a pull with
 > `docker run --pull=always ... diomonogatari/stash-mcp:latest`.
 
+### Use with Claude Desktop
+
+Open **Settings → Developer → Edit Config** (or edit `claude_desktop_config.json`
+directly) and add the server under the `mcpServers` key:
+
+```json
+{
+  "mcpServers": {
+    "stash-bitbucket": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "BITBUCKET_URL",
+        "-e", "BITBUCKET_TOKEN",
+        "diomonogatari/stash-mcp:latest"
+      ],
+      "env": {
+        "BITBUCKET_URL": "https://your-stash-server.com/",
+        "BITBUCKET_TOKEN": "your_personal_access_token"
+      }
+    }
+  }
+}
+```
+
+Config file location:
+
+| OS | Path |
+|----|------|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+
+Quit and relaunch Claude Desktop after saving. The Bitbucket tools appear under
+the tools (slider) icon. Docker Desktop must be running.
+
+> **Note:** Claude Desktop uses the `mcpServers` key (and no `"type"` field),
+> whereas the VS Code example above uses the `servers` key. The `command` and
+> `args` are identical.
+
+### Use with Claude Code
+
+```bash
+claude mcp add stash-bitbucket \
+  --transport stdio \
+  --env BITBUCKET_URL=https://your-stash-server.com/ \
+  --env BITBUCKET_TOKEN=your_personal_access_token \
+  -- docker run -i --rm -e BITBUCKET_URL -e BITBUCKET_TOKEN diomonogatari/stash-mcp:latest
+```
+
+This registers the server at **local** scope (current project, just you). Use
+`--scope user` to make it available across all your projects, or `--scope project`
+to commit it to a shared `.mcp.json`. Verify with `claude mcp list` or the `/mcp`
+command inside a session (it should report `stash-bitbucket` connected with 41
+tools), and remove it with `claude mcp remove stash-bitbucket`.
+
 ### Advanced Configuration
 
 Pass additional environment variables to tune resilience and caching behaviour:
@@ -135,7 +191,7 @@ Pass additional environment variables to tune resilience and caching behaviour:
 
 ## Tool Reference
 
-For detailed documentation of all 40 tools, see [docs/TOOLSET.md](docs/TOOLSET.md).
+For detailed documentation of all 41 tools, see [docs/TOOLSET.md](docs/TOOLSET.md).
 
 ### Common Workflows
 
@@ -272,7 +328,7 @@ Or pin to a specific version tag (e.g. `diomonogatari/stash-mcp:1.1.0`).
 ┌──────────────────────────────────────────────────────────┐
 │                      MCP Server Layer                    │
 │  ┌──────────────────────────────────────────────────┐    │
-│  │ Domain Tool Classes (9 classes, 40 tools)        │    │
+│  │ Domain Tool Classes (9 classes, 41 tools)        │    │
 │  │  ProjectTools  RepositoryTools  PullRequestTools │    │
 │  │  SearchTools   GitTools   HistoryTools           │    │
 │  │  BuildTools    DashboardTools  IntegrationTools  │    │
@@ -316,7 +372,7 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and folder structure
-- [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 40 tools
+- [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 41 tools
 - [Contributing](CONTRIBUTING.md) — Development setup and pull request guidelines
 - [Security](SECURITY.md) — Vulnerability reporting and credential safety
 - [Changelog](CHANGELOG.md) — Version history and release notes

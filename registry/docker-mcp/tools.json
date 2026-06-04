@@ -282,6 +282,17 @@
     ]
   },
   {
+    "name": "merge_pull_request",
+    "description": "Merge an existing pull request. Optionally provide a custom merge message or strategy.",
+    "arguments": [
+      { "name": "projectKey", "type": "string", "desc": "The key of the Bitbucket project." },
+      { "name": "repositorySlug", "type": "string", "desc": "The slug of the Bitbucket repository." },
+      { "name": "pullRequestId", "type": "integer", "desc": "The ID of the pull request." },
+      { "name": "message", "type": "string", "desc": "Optional custom merge commit message." },
+      { "name": "strategy", "type": "string", "desc": "Optional merge strategy override (passed through to Bitbucket Server)." }
+    ]
+  },
+  {
     "name": "get_pull_request_comments",
     "description": "Gets all comments for a specific pull request, including code context and nested replies.",
     "arguments": [

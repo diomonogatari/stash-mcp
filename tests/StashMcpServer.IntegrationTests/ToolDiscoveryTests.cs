@@ -5,12 +5,19 @@ namespace StashMcpServer.IntegrationTests;
 
 public sealed class ToolDiscoveryTests
 {
+    /// <summary>
+    /// Canonical number of MCP tools exposed by the server. Keep this in sync with the
+    /// documented count in README.md, the Dockerfile label, registry/docker-mcp metadata,
+    /// and docs/TOOLSET.md. This exact-count guard exists to catch documentation/source drift.
+    /// </summary>
+    private const int ExpectedToolCount = 41;
+
     [Fact]
-    public async Task ListTools_ReturnsAtLeastThirtyTools()
+    public async Task ListTools_ReturnsExactCanonicalCount()
     {
         var tools = await ListToolsAsync();
 
-        Assert.True(tools.Count >= 30, $"Expected at least 30 tools, but got {tools.Count}.");
+        Assert.Equal(ExpectedToolCount, tools.Count);
     }
 
     [Fact]

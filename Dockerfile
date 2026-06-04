@@ -29,7 +29,7 @@ RUN dotnet publish src/StashMcpServer/StashMcpServer.csproj \
 FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
 
 LABEL org.opencontainers.image.title="Stash MCP Server" \
-      org.opencontainers.image.description="MCP server for Bitbucket Server (Stash) — 40 tools for repositories, PRs, code review, builds, and search" \
+      org.opencontainers.image.description="MCP server for Bitbucket Server (Stash) — 41 tools for repositories, PRs, code review, builds, and search" \
       org.opencontainers.image.url="https://github.com/diomonogatari/stash-mcp" \
       org.opencontainers.image.source="https://github.com/diomonogatari/stash-mcp" \
       org.opencontainers.image.licenses="MIT"
