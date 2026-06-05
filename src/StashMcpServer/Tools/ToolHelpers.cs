@@ -1,5 +1,6 @@
 using Bitbucket.Net.Models.Core.Projects;
 using Bitbucket.Net.Models.Core.Users;
+using System.Globalization;
 using Path = System.IO.Path;
 
 namespace StashMcpServer.Tools;
@@ -9,6 +10,25 @@ namespace StashMcpServer.Tools;
 /// </summary>
 public static class ToolHelpers
 {
+    /// <summary>
+    /// The single canonical timestamp format used in all tool output, so the same instant
+    /// renders identically across every tool and on every machine (UTC, invariant culture).
+    /// </summary>
+    private const string TimestampFormat = "yyyy-MM-dd HH:mm:ss 'UTC'";
+
+    /// <summary>
+    /// Formats a timestamp as a canonical ISO-8601-style UTC string, or "Unknown" when null.
+    /// Use this everywhere instead of ad-hoc <c>ToString</c> formats to keep output deterministic.
+    /// </summary>
+    public static string FormatTimestamp(DateTimeOffset? timestamp) =>
+        timestamp is { } value ? FormatTimestamp(value) : "Unknown";
+
+    /// <summary>
+    /// Formats a timestamp as a canonical UTC string (see <see cref="FormatTimestamp(DateTimeOffset?)"/>).
+    /// </summary>
+    public static string FormatTimestamp(DateTimeOffset timestamp) =>
+        timestamp.ToUniversalTime().ToString(TimestampFormat, CultureInfo.InvariantCulture);
+
     /// <summary>
     /// Normalizes a Git reference by ensuring it has a refs/ prefix.
     /// </summary>

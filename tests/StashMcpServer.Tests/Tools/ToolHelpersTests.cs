@@ -119,4 +119,23 @@ public class ToolHelpersTests
     {
         Assert.Equal(expected, ToolHelpers.FormatBranchRef(input));
     }
+
+    [Fact]
+    public void FormatTimestamp_Null_ReturnsUnknown() =>
+        Assert.Equal("Unknown", ToolHelpers.FormatTimestamp((DateTimeOffset?)null));
+
+    [Fact]
+    public void FormatTimestamp_ConvertsToUtc_WithCanonicalInvariantFormat()
+    {
+        // 14:30 at +02:00 is 12:30 UTC — output is always UTC regardless of the source offset.
+        var ts = new DateTimeOffset(2026, 6, 5, 14, 30, 0, TimeSpan.FromHours(2));
+        Assert.Equal("2026-06-05 12:30:00 UTC", ToolHelpers.FormatTimestamp(ts));
+    }
+
+    [Fact]
+    public void FormatTimestamp_NullableWithValue_MatchesNonNullable()
+    {
+        var ts = new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
+        Assert.Equal(ToolHelpers.FormatTimestamp(ts), ToolHelpers.FormatTimestamp((DateTimeOffset?)ts));
+    }
 }

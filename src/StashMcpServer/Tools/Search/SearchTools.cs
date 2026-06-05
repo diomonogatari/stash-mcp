@@ -1270,7 +1270,7 @@ public class SearchTools(
 
                 sb.AppendLine($"### `{commit.DisplayId}` - {messageSummary}");
                 sb.AppendLine($"**Author:** {commit.AuthorName} <{commit.AuthorEmail}>");
-                sb.AppendLine($"**Date:** {commit.Timestamp:yyyy-MM-dd HH:mm}");
+                sb.AppendLine($"**Date:** {ToolHelpers.FormatTimestamp(commit.Timestamp)}");
 
                 // Include full message if it has multiple lines
                 if (commit.Message.Contains('\n'))
@@ -1498,7 +1498,7 @@ public class SearchTools(
                 sb.AppendLine($"### {stateIcon} PR #{pr.Id}: {pr.Title}");
                 sb.AppendLine($"**State:** {pr.State} | **Author:** {pr.AuthorName}");
                 sb.AppendLine($"**Branch:** `{pr.SourceBranch}` → `{pr.TargetBranch}`");
-                sb.AppendLine($"**Updated:** {pr.UpdatedDate:yyyy-MM-dd HH:mm} | **Reviewers:** {pr.ReviewerCount}");
+                sb.AppendLine($"**Updated:** {ToolHelpers.FormatTimestamp(pr.UpdatedDate)} | **Reviewers:** {pr.ReviewerCount}");
 
                 if (!string.IsNullOrWhiteSpace(pr.Url))
                 {

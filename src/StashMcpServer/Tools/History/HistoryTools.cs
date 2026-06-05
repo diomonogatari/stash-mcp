@@ -54,8 +54,8 @@ public class HistoryTools(
         var sb = new StringBuilder();
         sb.AppendLine($"Commit {commit.DisplayId} ({commit.Id})");
         sb.AppendLine($"Author: {commit.Author?.Name} <{commit.Author?.EmailAddress}>");
-        sb.AppendLine($"Date: {commit.AuthorTimestamp:u}");
-        sb.AppendLine($"Committer: {commit.Committer?.Name} <{commit.Committer?.EmailAddress}> at {commit.CommitterTimestamp:u}");
+        sb.AppendLine($"Date: {ToolHelpers.FormatTimestamp(commit.AuthorTimestamp)}");
+        sb.AppendLine($"Committer: {commit.Committer?.Name} <{commit.Committer?.EmailAddress}> at {ToolHelpers.FormatTimestamp(commit.CommitterTimestamp)}");
         sb.AppendLine("Message:");
         sb.AppendLine(commit.Message);
 
@@ -346,12 +346,12 @@ public class HistoryTools(
         sb.AppendLine();
         sb.AppendLine($"**Full Hash:** `{commit.Id}`");
         sb.AppendLine($"**Author:** {commit.Author?.Name ?? "Unknown"} <{commit.Author?.EmailAddress ?? "unknown"}>");
-        sb.AppendLine($"**Date:** {commit.AuthorTimestamp:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"**Date:** {ToolHelpers.FormatTimestamp(commit.AuthorTimestamp)}");
 
         if (commit.Committer?.Name != commit.Author?.Name)
         {
             sb.AppendLine($"**Committer:** {commit.Committer?.Name ?? "Unknown"} <{commit.Committer?.EmailAddress ?? "unknown"}>");
-            sb.AppendLine($"**Commit Date:** {commit.CommitterTimestamp:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"**Commit Date:** {ToolHelpers.FormatTimestamp(commit.CommitterTimestamp)}");
         }
 
         sb.AppendLine();

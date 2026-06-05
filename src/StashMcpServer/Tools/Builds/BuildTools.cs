@@ -159,7 +159,7 @@ public class BuildTools(
             }
 
             var commitDate = commit.CommitterTimestamp != default
-                ? commit.CommitterTimestamp.ToString("yyyy-MM-dd HH:mm")
+                ? ToolHelpers.FormatTimestamp(commit.CommitterTimestamp)
                 : "Unknown date";
 
             var messageFirstLine = commit.Message?.Split('\n').FirstOrDefault()?.Trim() ?? "No message";
@@ -302,7 +302,7 @@ public class BuildTools(
                 if (build.DateAdded > 0)
                 {
                     var dateAdded = DateTimeOffset.FromUnixTimeMilliseconds(build.DateAdded);
-                    sb.AppendLine($"  - Added: {dateAdded:yyyy-MM-dd HH:mm}");
+                    sb.AppendLine($"  - Added: {ToolHelpers.FormatTimestamp(dateAdded)}");
                 }
 
                 sb.AppendLine();

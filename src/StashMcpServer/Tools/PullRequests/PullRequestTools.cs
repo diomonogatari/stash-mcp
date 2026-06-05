@@ -142,17 +142,14 @@ public class PullRequestTools(
             sb.AppendLine($"  Author: {authorName}{youMarker}");
 
             sb.AppendLine($"  State: {pr.State}");
-            sb.AppendLine($"  Created: {pr.CreatedDate}");
-            var selfLinks = pr.Links?.Self;
+            sb.AppendLine($"  Created: {ToolHelpers.FormatTimestamp(pr.CreatedDate)}");
 
-            if (selfLinks is { Count: > 0 })
+            var selfLink = pr.Links?.Self?.FirstOrDefault()?.Href;
+            if (!string.IsNullOrWhiteSpace(selfLink))
             {
-                sb.AppendLine($"  Link: {selfLinks[0].Href}");
+                sb.AppendLine($"  Link: {selfLink}");
             }
-            else
-            {
-                sb.AppendLine("  Link: (No self link available)");
-            }
+
             sb.AppendLine();
         }
 
@@ -209,8 +206,8 @@ public class PullRequestTools(
         var authorMarker = isAuthor ? " (you)" : string.Empty;
         sb.AppendLine($"Author: {pr.Author?.User?.DisplayName} ({pr.Author?.User?.EmailAddress}){authorMarker}");
 
-        sb.AppendLine($"Created: {pr.CreatedDate}");
-        sb.AppendLine($"Updated: {pr.UpdatedDate}");
+        sb.AppendLine($"Created: {ToolHelpers.FormatTimestamp(pr.CreatedDate)}");
+        sb.AppendLine($"Updated: {ToolHelpers.FormatTimestamp(pr.UpdatedDate)}");
         sb.AppendLine($"Source: {pr.FromRef?.Id} (Repo: {pr.FromRef?.Repository?.Slug})");
         sb.AppendLine($"Target: {pr.ToRef?.Id} (Repo: {pr.ToRef?.Repository?.Slug})");
         sb.AppendLine("--------------------------------------------------");
@@ -509,7 +506,7 @@ public class PullRequestTools(
         sb.AppendLine("--------------------------------------------------");
         sb.AppendLine($"Reply ID: #{createdComment.Id}");
         sb.AppendLine($"Author: {createdComment.Author?.DisplayName ?? createdComment.Author?.Name ?? "Unknown"}");
-        sb.AppendLine($"Created: {createdComment.CreatedDate?.ToString("u") ?? "Unknown"}");
+        sb.AppendLine($"Created: {ToolHelpers.FormatTimestamp(createdComment.CreatedDate)}");
         sb.AppendLine();
         sb.AppendLine("Content:");
         sb.AppendLine(createdComment.Text);
@@ -709,7 +706,7 @@ public class PullRequestTools(
 
         sb.AppendLine($"Comment ID: #{createdComment.Id}");
         sb.AppendLine($"Author: {createdComment.Author?.DisplayName ?? createdComment.Author?.Name ?? "Unknown"}");
-        sb.AppendLine($"Created: {createdComment.CreatedDate?.ToString("u") ?? "Unknown"}");
+        sb.AppendLine($"Created: {ToolHelpers.FormatTimestamp(createdComment.CreatedDate)}");
 
         if (!string.IsNullOrWhiteSpace(filePath))
         {
@@ -1351,7 +1348,7 @@ public class PullRequestTools(
             sb.AppendLine($"Pull Request: {normalizedProjectKey}/{normalizedSlug} PR #{pullRequestId}");
         }
 
-        sb.AppendLine($"Created: {createdTask.CreatedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Now"}");
+        sb.AppendLine($"Created: {ToolHelpers.FormatTimestamp(createdTask.CreatedDate)}");
         sb.AppendLine();
         sb.AppendLine("Description:");
         sb.AppendLine($"> {createdTask.Text}");
@@ -1611,8 +1608,8 @@ public class PullRequestTools(
         var authorMarker = isAuthor ? " (you)" : string.Empty;
         sb.AppendLine($"**Author:** {pr.Author?.User?.DisplayName ?? "Unknown"}{authorMarker}");
 
-        sb.AppendLine($"**Created:** {pr.CreatedDate?.ToString("u") ?? "Unknown"}");
-        sb.AppendLine($"**Updated:** {pr.UpdatedDate?.ToString("u") ?? "Unknown"}");
+        sb.AppendLine($"**Created:** {ToolHelpers.FormatTimestamp(pr.CreatedDate)}");
+        sb.AppendLine($"**Updated:** {ToolHelpers.FormatTimestamp(pr.UpdatedDate)}");
         sb.AppendLine();
         sb.AppendLine($"**Source:** `{ToolHelpers.FormatBranchRef(pr.FromRef?.Id)}` (Repo: {pr.FromRef?.Repository?.Slug})");
         sb.AppendLine($"**Target:** `{ToolHelpers.FormatBranchRef(pr.ToRef?.Id)}` (Repo: {pr.ToRef?.Repository?.Slug})");
@@ -1632,7 +1629,7 @@ public class PullRequestTools(
     {
         sb.AppendLine("## Reviewers");
 
-        foreach (var reviewer in reviewers)
+        foreach (var reviewer in reviewers.OrderBy(r => r.User?.DisplayName ?? r.User?.Name ?? "Unknown", StringComparer.OrdinalIgnoreCase))
         {
             var isYou = CacheService.IsCurrentUser(reviewer.User?.Slug);
             var youMarker = isYou ? " (you)" : string.Empty;
@@ -1677,7 +1674,7 @@ public class PullRequestTools(
 
         foreach (var activity in nonCommentActivities)
         {
-            var timestamp = activity.CreatedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Unknown";
+            var timestamp = ToolHelpers.FormatTimestamp(activity.CreatedDate);
             var user = activity.User?.DisplayName ?? "Unknown";
             var action = activity.Action ?? "Updated";
 
@@ -1698,7 +1695,7 @@ public class PullRequestTools(
 
             sb.AppendLine($"### Comment #{comment.Id}");
             sb.AppendLine($"**Author:** {comment.Author?.DisplayName ?? "Unknown"}");
-            sb.AppendLine($"**Date:** {comment.CreatedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Unknown"}");
+            sb.AppendLine($"**Date:** {ToolHelpers.FormatTimestamp(comment.CreatedDate)}");
 
             if (anchor is not null && !string.IsNullOrWhiteSpace(anchor.Path))
             {
@@ -1739,11 +1736,11 @@ public class PullRequestTools(
 
         sb.AppendLine($"{indentStr}┌─ Comment #{comment.Id}");
         sb.AppendLine($"{indentStr}│ Author: {comment.Author?.DisplayName ?? comment.Author?.Name ?? "Unknown"}");
-        sb.AppendLine($"{indentStr}│ Date: {comment.CreatedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Unknown"}");
+        sb.AppendLine($"{indentStr}│ Date: {ToolHelpers.FormatTimestamp(comment.CreatedDate)}");
 
         if (comment.UpdatedDate.HasValue && comment.UpdatedDate != comment.CreatedDate)
         {
-            sb.AppendLine($"{indentStr}│ Updated: {comment.UpdatedDate?.ToString("yyyy-MM-dd HH:mm:ss")}");
+            sb.AppendLine($"{indentStr}│ Updated: {ToolHelpers.FormatTimestamp(comment.UpdatedDate)}");
         }
 
         if (anchor is not null && !string.IsNullOrWhiteSpace(anchor.Path))
@@ -1808,7 +1805,7 @@ public class PullRequestTools(
 
         sb.AppendLine($"{indentStr}├── Reply #{reply.Id}");
         sb.AppendLine($"{indentStr}│   Author: {reply.Author?.DisplayName ?? reply.Author?.Name ?? "Unknown"}");
-        sb.AppendLine($"{indentStr}│   Date: {reply.CreatedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Unknown"}");
+        sb.AppendLine($"{indentStr}│   Date: {ToolHelpers.FormatTimestamp(reply.CreatedDate)}");
         sb.AppendLine($"{indentStr}│");
 
         foreach (var line in (reply.Text ?? "(empty)").Split('\n'))
@@ -2006,11 +2003,12 @@ public class PullRequestTools(
         sb.AppendLine($"State: {pullRequest.State}");
         sb.AppendLine($"Source: {pullRequest.FromRef?.Id ?? "(unknown)"}");
         sb.AppendLine($"Target: {pullRequest.ToRef?.Id ?? "(unknown)"}");
-        sb.AppendLine($"Updated: {pullRequest.UpdatedDate?.ToString("u") ?? "(unknown)"}");
+        sb.AppendLine($"Updated: {ToolHelpers.FormatTimestamp(pullRequest.UpdatedDate)}");
 
         var reviewerNames = pullRequest.Reviewers?
             .Select(r => r.User?.DisplayName ?? r.User?.Name ?? r.User?.Slug)
             .Where(name => !string.IsNullOrWhiteSpace(name))
+            .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         if (reviewerNames is { Count: > 0 })
@@ -2039,7 +2037,7 @@ public class PullRequestTools(
         sb.AppendLine($"### {stateIcon} Task #{task.Id}");
         sb.AppendLine($"**State:** {task.State}");
         sb.AppendLine($"**Author:** {author}{youMarker}");
-        sb.AppendLine($"**Created:** {task.CreatedDate?.ToString("yyyy-MM-dd HH:mm") ?? "Unknown"}");
+        sb.AppendLine($"**Created:** {ToolHelpers.FormatTimestamp(task.CreatedDate)}");
         sb.AppendLine();
         sb.AppendLine("**Description:**");
         sb.AppendLine($"> {task.Text ?? "(no description)"}");
