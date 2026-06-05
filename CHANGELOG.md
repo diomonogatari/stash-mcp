@@ -5,17 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.3.0] - 2026-06-05
 
 ### Added
 
-- Setup documentation for using the server with Claude Desktop (`mcpServers` config) and Claude Code (`claude mcp add`)
-- Exact tool-count assertion in `ToolDiscoveryTests` to prevent documentation/source drift
+- Bounded retry of the startup Bitbucket connection check (exponential backoff) before failing fast, so a transient blip at boot no longer takes the server down. Configurable via `BITBUCKET_STARTUP_VALIDATION_ATTEMPTS` (default 3); auth/permission failures still fail fast immediately, and an exhausted retry still hard-fails.
+- Per-category cache TTLs: `BITBUCKET_CACHE_TTL_STATIC_SECONDS` (default 10 minutes) for immutable/slow-changing data (commits by hash, branch/tag lists, file content) and `BITBUCKET_CACHE_TTL_SHORT_SECONDS` (default 15 seconds) for CI/build status, alongside the existing `BITBUCKET_CACHE_TTL_SECONDS`.
+- Group-based cache invalidation so a write atomically evicts every related entry, including the `limit=` and pull-request-context variants that the previous per-key invalidation missed.
+- Size-aware cache eviction that weights large payloads (strings, collections) proportionally toward the cache budget.
+- Setup documentation for using the server with Claude Desktop (`mcpServers` config) and Claude Code (`claude mcp add`).
+- Real-composition integration tests that exercise the resilience, cache, and formatting pipeline end-to-end with only the Bitbucket HTTP client mocked; plus an exact tool-count assertion to prevent documentation/source drift.
+
+### Changed
+
+- All tool output now renders timestamps in a single canonical ISO-8601 UTC format (invariant culture), so the same instant is reported identically across every tool and on any machine.
+- Cached reads now surface the same descriptive errors as writes (e.g. "Resource not found", "Access forbidden") instead of a generic "Bitbucket API error (&lt;status&gt;)".
+- Pull-request reviewers are sorted deterministically in output.
+- Bumped the `McpServerFactory` test harness from `0.1.0` to `0.2.0`.
 
 ### Fixed
 
-- Corrected the documented tool count from 40 to 41 across the README, Dockerfile label, and Docker MCP catalog metadata
-- Added the missing `merge_pull_request` entry to `registry/docker-mcp/tools.json`
+- The resilience pipeline no longer crashes at startup when retries are disabled (`BITBUCKET_RETRY_COUNT=0`); the retry layer is skipped instead of failing Polly's validation.
+- Corrected the documented tool count from 40 to 41 across the README, Dockerfile label, and Docker MCP catalog metadata, and added the missing `merge_pull_request` entry to `registry/docker-mcp/tools.json`.
+
+### Removed
+
+- The unused `pr-diff` cache key (pull-request diffs are streamed and never cached).
 
 ## [1.2.0] - 2026-02-13
 
