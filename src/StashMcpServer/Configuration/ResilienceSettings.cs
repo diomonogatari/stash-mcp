@@ -50,11 +50,27 @@ public class ResilienceSettings
     public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// TTL for cached dynamic data (PR lists, comments).
+    /// TTL for cached dynamic data (PR lists, comments) — the default category.
     /// Default: 60 seconds
     /// Environment variable: BITBUCKET_CACHE_TTL_SECONDS
     /// </summary>
     public TimeSpan DynamicCacheTtl { get; set; } = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// TTL for slow-changing / effectively-immutable data (commit-by-hash content and
+    /// changes, branch/tag lists, file content). Cached longer to cut redundant API calls
+    /// and keep output stable within a session.
+    /// Default: 10 minutes
+    /// Environment variable: BITBUCKET_CACHE_TTL_STATIC_SECONDS
+    /// </summary>
+    public TimeSpan StaticCacheTtl { get; set; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// TTL for fast-changing data (CI/build status). Kept short so freshness is not sacrificed.
+    /// Default: 15 seconds
+    /// Environment variable: BITBUCKET_CACHE_TTL_SHORT_SECONDS
+    /// </summary>
+    public TimeSpan ShortCacheTtl { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// Whether to enable graceful degradation (return stale cache on failure).
@@ -99,6 +115,16 @@ public class ResilienceSettings
         if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_TTL_SECONDS"), out var cacheTtl))
         {
             settings.DynamicCacheTtl = TimeSpan.FromSeconds(Math.Clamp(cacheTtl, 10, 600));
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_TTL_STATIC_SECONDS"), out var staticTtl))
+        {
+            settings.StaticCacheTtl = TimeSpan.FromSeconds(Math.Clamp(staticTtl, 30, 3600));
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_TTL_SHORT_SECONDS"), out var shortTtl))
+        {
+            settings.ShortCacheTtl = TimeSpan.FromSeconds(Math.Clamp(shortTtl, 5, 120));
         }
 
         if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_SIZE_LIMIT"), out var cacheSize))

@@ -26,13 +26,6 @@ public class CacheKeysTests
     }
 
     [Fact]
-    public void PullRequestDiff_ReturnsExpectedFormat()
-    {
-        var result = CacheKeys.PullRequestDiff(ProjectKey, RepoSlug, PrId);
-        Assert.Equal("pr-diff:PROJ:my-repo:123", result);
-    }
-
-    [Fact]
     public void PullRequestComments_ReturnsExpectedFormat()
     {
         var result = CacheKeys.PullRequestComments(ProjectKey, RepoSlug, PrId);

@@ -209,7 +209,6 @@ public class ResilientApiServiceTests : IDisposable
             CacheKeys.PullRequestComments("P", "R", 1),
             CacheKeys.PullRequestActivities("P", "R", 1),
             CacheKeys.PullRequestTasks("P", "R", 1),
-            CacheKeys.PullRequestDiff("P", "R", 1),
             CacheKeys.PullRequestChanges("P", "R", 1),
         };
 
@@ -224,6 +223,43 @@ public class ResilientApiServiceTests : IDisposable
         {
             Assert.False(_sut.TryGetCached<string>(key, out _), $"Key {key} should have been invalidated");
         }
+    }
+
+    [Fact]
+    public async Task InvalidatePullRequestCache_RemovesContextAndLimitVariants()
+    {
+        // Group eviction must clear every PR-context flag combination and every limit= variant —
+        // the cases the old per-key enumeration missed.
+        var contextA = CacheKeys.PullRequestContext("P", "R", 1, true, false, true, false);
+        var contextB = CacheKeys.PullRequestContext("P", "R", 1, false, true, false, true);
+        var detailsWithSuffix = $"{CacheKeys.PullRequestDetails("P", "R", 1)}:limit=99";
+
+        await _sut.ExecuteAsync(contextA, _ => Task.FromResult("a"));
+        await _sut.ExecuteAsync(contextB, _ => Task.FromResult("b"));
+        await _sut.ExecuteAsync(detailsWithSuffix, _ => Task.FromResult("c"));
+
+        _sut.InvalidatePullRequestCache("P", "R", 1);
+
+        Assert.False(_sut.TryGetCached<string>(contextA, out _));
+        Assert.False(_sut.TryGetCached<string>(contextB, out _));
+        Assert.False(_sut.TryGetCached<string>(detailsWithSuffix, out _));
+    }
+
+    [Fact]
+    public async Task InvalidatePullRequestListCache_RemovesLimitSuffixedVariants()
+    {
+        // Real list cache keys carry a ":limit=N" suffix; the old invalidation removed only the
+        // base state keys and left these stale. Group eviction must clear them.
+        var k25 = $"{CacheKeys.PullRequestList("P", "R", "OPEN")}:limit=25";
+        var k50 = $"{CacheKeys.PullRequestList("P", "R", "OPEN")}:limit=50";
+
+        await _sut.ExecuteAsync(k25, _ => Task.FromResult("a"));
+        await _sut.ExecuteAsync(k50, _ => Task.FromResult("b"));
+
+        _sut.InvalidatePullRequestListCache("P", "R");
+
+        Assert.False(_sut.TryGetCached<string>(k25, out _));
+        Assert.False(_sut.TryGetCached<string>(k50, out _));
     }
 
     [Fact]

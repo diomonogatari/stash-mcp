@@ -3,6 +3,22 @@ using Polly.CircuitBreaker;
 namespace StashMcpServer.Services;
 
 /// <summary>
+/// Cache lifetime category for a read operation. Lets call sites express intent
+/// (e.g. "this is immutable, cache it long") instead of hard-coding TTLs.
+/// </summary>
+public enum CacheDuration
+{
+    /// <summary>Slow-changing / effectively-immutable data (commits, branch/tag lists, file content). Long TTL.</summary>
+    Static,
+
+    /// <summary>General dynamic data (PR lists, comments, dashboards). The standard TTL.</summary>
+    Default,
+
+    /// <summary>Fast-changing data (CI/build status). Short TTL.</summary>
+    Short,
+}
+
+/// <summary>
 /// Provides resilient API call execution with circuit breaker, retry, and graceful degradation.
 /// </summary>
 public interface IResilientApiService

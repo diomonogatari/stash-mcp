@@ -13,9 +13,6 @@ public static class CacheKeys
     public static string PullRequestDetails(string projectKey, string repoSlug, long prId) =>
         $"pr-details:{projectKey}:{repoSlug}:{prId}";
 
-    public static string PullRequestDiff(string projectKey, string repoSlug, long prId) =>
-        $"pr-diff:{projectKey}:{repoSlug}:{prId}";
-
     public static string PullRequestComments(string projectKey, string repoSlug, long prId) =>
         $"pr-comments:{projectKey}:{repoSlug}:{prId}";
 

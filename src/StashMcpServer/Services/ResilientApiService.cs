@@ -1,11 +1,13 @@
 using Bitbucket.Net.Common.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using ModelContextProtocol;
 using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
 using Polly.Timeout;
 using StashMcpServer.Configuration;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
 namespace StashMcpServer.Services;
@@ -20,6 +22,11 @@ public class ResilientApiService : IResilientApiService
     private readonly ResilienceSettings _settings;
     private readonly ILogger<ResilientApiService> _logger;
     private readonly ResiliencePipeline _pipeline;
+
+    // One cancellation source per logical cache group (e.g. all entries of a PR). Cached entries
+    // register the group's change token; invalidating the group trips the token, evicting every
+    // variant atomically. See CacheGroups.
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _groupTokens = new(StringComparer.Ordinal);
 
     // Track circuit state for logging
     private CircuitState _lastCircuitState = CircuitState.Closed;
@@ -56,7 +63,9 @@ public class ResilientApiService : IResilientApiService
         TimeSpan? cacheTtl = null,
         CancellationToken cancellationToken = default)
     {
-        var effectiveTtl = cacheTtl ?? _settings.DynamicCacheTtl;
+        // Per-category TTL: slow-changing data (commits, branches, file content) is cached
+        // longer and fast-changing data (CI/build status) shorter, derived from the key prefix.
+        var effectiveTtl = cacheTtl ?? ResolveTtl(CachePolicy.Categorize(cacheKey));
 
         try
         {
@@ -64,12 +73,22 @@ public class ResilientApiService : IResilientApiService
                 async ct => await operation(ct),
                 cancellationToken);
 
-            // Cache successful response with Size specified (required when SizeLimit is set)
+            // Cache successful response. Size is required when a SizeLimit is set; weight larger
+            // payloads (strings, collections) more so they count proportionally toward the budget.
             var cacheOptions = new MemoryCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = effectiveTtl,
-                Size = 1 // Each entry counts as 1 unit toward the SizeLimit
+                Size = CacheEntrySize.Estimate(result),
             };
+
+            // Attach the key's invalidation group (if any) so a single write can evict all of its
+            // variants — every limit= suffix and every PR-context flag combination — atomically.
+            var invalidationGroup = CacheGroups.GroupFor(cacheKey);
+            if (invalidationGroup is not null)
+            {
+                cacheOptions.AddExpirationToken(GetGroupChangeToken(invalidationGroup));
+            }
+
             _cache.Set(cacheKey, result, cacheOptions);
             _logger.LogDebug("Cached result for key {CacheKey} with TTL {Ttl}s", cacheKey, effectiveTtl.TotalSeconds);
 
@@ -92,6 +111,13 @@ public class ResilientApiService : IResilientApiService
             throw MapApiException(ex);
         }
     }
+
+    private TimeSpan ResolveTtl(CacheDuration duration) => duration switch
+    {
+        CacheDuration.Static => _settings.StaticCacheTtl,
+        CacheDuration.Short => _settings.ShortCacheTtl,
+        _ => _settings.DynamicCacheTtl,
+    };
 
     /// <summary>
     /// Executes an async operation with resilience but without caching.
@@ -155,7 +181,7 @@ public class ResilientApiService : IResilientApiService
     }
 
     /// <summary>
-    /// Invalidates a cache entry.
+    /// Invalidates a single cache entry by its exact key.
     /// </summary>
     /// <param name="cacheKey">The exact cache key to invalidate.</param>
     public void InvalidateCache(string cacheKey)
@@ -165,65 +191,73 @@ public class ResilientApiService : IResilientApiService
     }
 
     /// <summary>
-    /// Invalidates all cache entries related to a specific pull request.
-    /// This is a convenience method that invalidates PR details, context, comments, activities, tasks, and diff.
+    /// Invalidates every cache entry belonging to a specific pull request (details, context,
+    /// comments, activities, tasks, changes, merge-base, Jira links) in one atomic group eviction.
     /// </summary>
-    /// <param name="projectKey">The Bitbucket project key.</param>
-    /// <param name="repoSlug">The repository slug.</param>
-    /// <param name="prId">The pull request ID.</param>
     public void InvalidatePullRequestCache(string projectKey, string repoSlug, long prId)
     {
-        InvalidateCache(CacheKeys.PullRequest(projectKey, repoSlug, prId));
-        InvalidateCache(CacheKeys.PullRequestDetails(projectKey, repoSlug, prId));
-        InvalidateCache(CacheKeys.PullRequestComments(projectKey, repoSlug, prId));
-        InvalidateCache(CacheKeys.PullRequestActivities(projectKey, repoSlug, prId));
-        InvalidateCache(CacheKeys.PullRequestTasks(projectKey, repoSlug, prId));
-        InvalidateCache(CacheKeys.PullRequestDiff(projectKey, repoSlug, prId));
-        InvalidateCache(CacheKeys.PullRequestChanges(projectKey, repoSlug, prId));
-
-        // Invalidate all context variations (16 combinations of 4 boolean flags)
-        InvalidateAllContextVariations(projectKey, repoSlug, prId);
-
+        InvalidateGroup(CacheGroups.PrItemGroup(projectKey, repoSlug, prId));
         _logger.LogInformation("Invalidated all cache entries for PR #{PrId} in {ProjectKey}/{RepoSlug}", prId, projectKey, repoSlug);
     }
 
     /// <summary>
-    /// Invalidates the pull request list cache for a repository.
-    /// This invalidates all state variations (OPEN, MERGED, DECLINED, ALL).
+    /// Invalidates the pull-request list views of a repository — all states (OPEN/MERGED/DECLINED/ALL)
+    /// and all <c>limit=</c> variants — in one atomic group eviction.
     /// </summary>
-    /// <param name="projectKey">The Bitbucket project key.</param>
-    /// <param name="repoSlug">The repository slug.</param>
     public void InvalidatePullRequestListCache(string projectKey, string repoSlug)
     {
-        foreach (var state in new[] { "OPEN", "MERGED", "DECLINED", "ALL" })
-        {
-            InvalidateCache(CacheKeys.PullRequestList(projectKey, repoSlug, state));
-        }
-
+        InvalidateGroup(CacheGroups.PrListGroup(projectKey, repoSlug));
         _logger.LogInformation("Invalidated PR list cache for {ProjectKey}/{RepoSlug}", projectKey, repoSlug);
     }
 
     /// <summary>
-    /// Invalidates all context cache variations for a pull request.
-    /// This covers all 16 combinations of the 4 boolean flags (comments, diff, activity, tasks).
+    /// Invalidates all PR-context cache variations for a pull request. Context entries live in the
+    /// PR-item group, so this evicts every flag combination in one group eviction.
     /// </summary>
-    /// <param name="projectKey">The Bitbucket project key.</param>
-    /// <param name="repoSlug">The repository slug.</param>
-    /// <param name="prId">The pull request ID.</param>
     public void InvalidateAllContextVariations(string projectKey, string repoSlug, long prId)
     {
-        foreach (var includeComments in new[] { true, false })
+        InvalidateGroup(CacheGroups.PrItemGroup(projectKey, repoSlug, prId));
+    }
+
+    /// <summary>
+    /// Returns the change token for a cache group, creating the group's cancellation source on
+    /// first use. Tolerates a concurrent invalidation disposing the source between lookups.
+    /// </summary>
+    private CancellationChangeToken GetGroupChangeToken(string group)
+    {
+        while (true)
         {
-            foreach (var includeDiff in new[] { true, false })
+            var cts = _groupTokens.GetOrAdd(group, static _ => new CancellationTokenSource());
+            try
             {
-                foreach (var includeActivity in new[] { true, false })
-                {
-                    foreach (var includeTasks in new[] { true, false })
-                    {
-                        InvalidateCache(CacheKeys.PullRequestContext(projectKey, repoSlug, prId, includeComments, includeDiff, includeActivity, includeTasks));
-                    }
-                }
+                return new CancellationChangeToken(cts.Token);
             }
+            catch (ObjectDisposedException)
+            {
+                // A concurrent InvalidateGroup disposed this source; drop the stale entry and retry.
+                _groupTokens.TryRemove(new KeyValuePair<string, CancellationTokenSource>(group, cts));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Trips a cache group's change token, evicting all entries registered under it, and replaces
+    /// the source so future entries start a fresh group.
+    /// </summary>
+    private void InvalidateGroup(string group)
+    {
+        if (_groupTokens.TryRemove(group, out var cts))
+        {
+            try
+            {
+                cts.Cancel();
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+
+            _logger.LogDebug("Invalidated cache group {Group}", group);
         }
     }
 
