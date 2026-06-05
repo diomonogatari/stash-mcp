@@ -70,6 +70,16 @@ public class ResilienceSettings
     public int CacheSizeLimit { get; set; } = 1000;
 
     /// <summary>
+    /// Number of attempts to validate the Bitbucket connection at startup before failing fast.
+    /// Transient failures (network, 5xx, rate limiting) are retried with exponential backoff;
+    /// auth/permission failures fail immediately. If all attempts are exhausted the server
+    /// still hard-fails (stops the host).
+    /// Default: 3
+    /// Environment variable: BITBUCKET_STARTUP_VALIDATION_ATTEMPTS
+    /// </summary>
+    public int StartupValidationAttempts { get; set; } = 3;
+
+    /// <summary>
     /// Creates ResilienceSettings from environment variables with defaults.
     /// </summary>
     public static ResilienceSettings FromEnvironment()
@@ -94,6 +104,11 @@ public class ResilienceSettings
         if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_CACHE_SIZE_LIMIT"), out var cacheSize))
         {
             settings.CacheSizeLimit = Math.Clamp(cacheSize, 100, 50_000);
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("BITBUCKET_STARTUP_VALIDATION_ATTEMPTS"), out var startupAttempts))
+        {
+            settings.StartupValidationAttempts = Math.Clamp(startupAttempts, 1, 10);
         }
 
         return settings;

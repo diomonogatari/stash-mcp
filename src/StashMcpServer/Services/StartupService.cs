@@ -48,12 +48,27 @@ internal sealed class StartupService(
 
         try
         {
-            await bitbucketClient.GetProjectsAsync(limit: 1, cancellationToken: cancellationToken).ConfigureAwait(false);
+            // Retry transient blips (network/5xx/429) with exponential backoff (1s, 2s, 4s...)
+            // so a brief outage at boot doesn't kill the server; auth errors fail fast.
+            await StartupRetry.ValidateWithRetryAsync(
+                ct => bitbucketClient.GetProjectsAsync(limit: 1, cancellationToken: ct),
+                resilienceSettings.StartupValidationAttempts,
+                static attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt - 1)),
+                logger,
+                cancellationToken).ConfigureAwait(false);
+
             logger.LogInformation("Connection to Bitbucket Server validated successfully.");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to connect to Bitbucket Server. Check BITBUCKET_URL and BITBUCKET_TOKEN.");
+            logger.LogError(
+                ex,
+                "Failed to connect to Bitbucket Server after {Attempts} attempt(s). Check BITBUCKET_URL and BITBUCKET_TOKEN.",
+                resilienceSettings.StartupValidationAttempts);
             throw;
         }
     }
