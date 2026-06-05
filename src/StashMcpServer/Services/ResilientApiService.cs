@@ -346,34 +346,39 @@ public class ResilientApiService : IResilientApiService
             }
         });
 
-        // Layer 2: Retry with exponential backoff
-        builder.AddRetry(new RetryStrategyOptions
+        // Layer 2: Retry with exponential backoff. Skipped when retries are disabled
+        // (MaxRetryAttempts == 0), because Polly's retry strategy requires at least one attempt
+        // and would otherwise throw a validation error while building the pipeline.
+        if (_settings.MaxRetryAttempts > 0)
         {
-            MaxRetryAttempts = _settings.MaxRetryAttempts,
-            Delay = _settings.RetryBaseDelay,
-            BackoffType = DelayBackoffType.Exponential,
-            UseJitter = true,
-            ShouldHandle = new PredicateBuilder()
-                .Handle<HttpRequestException>()
-                .Handle<TimeoutRejectedException>()
-                .Handle<BitbucketRateLimitException>()       // 429 - always retry with backoff
-                .Handle<BitbucketServerException>(),        // 5xx - server errors are often transient
-            OnRetry = args =>
+            builder.AddRetry(new RetryStrategyOptions
             {
-                var exceptionDetails = args.Outcome.Exception switch
+                MaxRetryAttempts = _settings.MaxRetryAttempts,
+                Delay = _settings.RetryBaseDelay,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                ShouldHandle = new PredicateBuilder()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutRejectedException>()
+                    .Handle<BitbucketRateLimitException>()       // 429 - always retry with backoff
+                    .Handle<BitbucketServerException>(),        // 5xx - server errors are often transient
+                OnRetry = args =>
                 {
-                    BitbucketApiException bbEx => $"{bbEx.GetType().Name} ({(int)bbEx.StatusCode}): {bbEx.Message}",
-                    _ => args.Outcome.Exception?.Message ?? "Unknown"
-                };
-                _logger.LogWarning(
-                    "Retry attempt {AttemptNumber}/{MaxRetries} after {Delay}ms due to: {ExceptionMessage}",
-                    args.AttemptNumber,
-                    _settings.MaxRetryAttempts,
-                    args.RetryDelay.TotalMilliseconds,
-                    exceptionDetails);
-                return default;
-            }
-        });
+                    var exceptionDetails = args.Outcome.Exception switch
+                    {
+                        BitbucketApiException bbEx => $"{bbEx.GetType().Name} ({(int)bbEx.StatusCode}): {bbEx.Message}",
+                        _ => args.Outcome.Exception?.Message ?? "Unknown"
+                    };
+                    _logger.LogWarning(
+                        "Retry attempt {AttemptNumber}/{MaxRetries} after {Delay}ms due to: {ExceptionMessage}",
+                        args.AttemptNumber,
+                        _settings.MaxRetryAttempts,
+                        args.RetryDelay.TotalMilliseconds,
+                        exceptionDetails);
+                    return default;
+                }
+            });
+        }
 
         // Layer 3: Circuit breaker (outermost)
         builder.AddCircuitBreaker(new CircuitBreakerStrategyOptions

@@ -346,4 +346,25 @@ public class ResilientApiServiceTests : IDisposable
 
         Assert.Contains("Access forbidden", ex.Message);
     }
+
+    [Fact]
+    public async Task Constructor_WithZeroRetries_BuildsPipelineAndExecutes()
+    {
+        // MaxRetryAttempts = 0 (allowed by the env clamp) must mean "no retries", not crash the
+        // pipeline build — Polly's retry strategy rejects 0, so the retry layer is skipped.
+        var settings = new ResilienceSettings
+        {
+            MaxRetryAttempts = 0,
+            CircuitBreakerMinimumThroughput = 100,
+            RequestTimeout = TimeSpan.FromSeconds(5),
+            DynamicCacheTtl = TimeSpan.FromMinutes(5),
+        };
+
+        using var cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });
+        var sut = new ResilientApiService(cache, settings, NullLogger<ResilientApiService>.Instance);
+
+        var result = await sut.ExecuteAsync("zero-retry-key", _ => Task.FromResult("ok"));
+
+        Assert.Equal("ok", result);
+    }
 }
