@@ -85,15 +85,11 @@ public class ResilientApiService : IResilientApiService
             _logger.LogWarning(ex, "Request timed out for key {CacheKey}. Attempting graceful degradation.", cacheKey);
             return HandleGracefulDegradation<T>(cacheKey, ex);
         }
-        catch (BitbucketApiException ex)
-        {
-            _logger.LogError(ex, "Bitbucket API error for key {CacheKey}: {StatusCode}", cacheKey, (int)ex.StatusCode);
-            throw new McpException($"Bitbucket API error ({(int)ex.StatusCode}): {ex.Message}");
-        }
         catch (Exception ex) when (ex is not OperationCanceledException and not McpException)
         {
-            _logger.LogError(ex, "API operation failed for key {CacheKey}", cacheKey);
-            throw new McpException($"API request failed for '{cacheKey}': {ex.Message}");
+            // Route through the shared mapper so cached reads surface the same
+            // descriptive errors (not-found / forbidden / server) as uncached writes.
+            throw MapApiException(ex);
         }
     }
 
@@ -232,39 +228,46 @@ public class ResilientApiService : IResilientApiService
     }
 
     /// <summary>
-    /// Maps a known API exception to an <see cref="McpException"/> and throws it.
-    /// Consolidates error logging and exception wrapping for uncached operations.
+    /// Maps a known API/resilience exception to a descriptive <see cref="McpException"/>,
+    /// logging at an appropriate level. Shared by both the cached and uncached execution
+    /// paths so reads and writes surface identical, deterministic error messages.
     /// </summary>
-    [DoesNotReturn]
-    private void ThrowUncachedException(Exception ex)
+    private McpException MapApiException(Exception ex)
     {
         switch (ex)
         {
             case BrokenCircuitException bce:
                 _logger.LogWarning("Circuit breaker is open. Error: {Message}", bce.Message);
-                throw new McpException($"Bitbucket API unavailable (circuit breaker open): {bce.Message}");
+                return new McpException($"Bitbucket API unavailable (circuit breaker open): {bce.Message}");
 
             case TimeoutRejectedException tre:
                 _logger.LogWarning("Operation timed out. Error: {Message}", tre.Message);
-                throw new McpException($"Operation timed out: {tre.Message}");
+                return new McpException($"Operation timed out: {tre.Message}");
 
             case BitbucketNotFoundException bnfe:
                 _logger.LogWarning("Resource not found: {Message}", bnfe.Message);
-                throw new McpException($"Resource not found: {bnfe.Context ?? bnfe.Message}");
+                return new McpException($"Resource not found: {bnfe.Context ?? bnfe.Message}");
 
             case BitbucketForbiddenException bfe:
                 _logger.LogWarning("Access forbidden: {Message}", bfe.Message);
-                throw new McpException($"Access forbidden: {bfe.Message}");
+                return new McpException($"Access forbidden: {bfe.Message}");
 
             case BitbucketApiException bae:
                 _logger.LogError(ex, "Bitbucket API error ({StatusCode}): {Message}", (int)bae.StatusCode, bae.Message);
-                throw new McpException($"Bitbucket API error ({(int)bae.StatusCode}): {bae.Message}");
+                return new McpException($"Bitbucket API error ({(int)bae.StatusCode}): {bae.Message}");
 
             default:
                 _logger.LogError(ex, "Operation failed unexpectedly");
-                throw new McpException($"Operation failed: {ex.Message}");
+                return new McpException($"Operation failed: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Maps and throws a known API exception as an <see cref="McpException"/>.
+    /// Thin throwing wrapper over <see cref="MapApiException"/> for uncached call sites.
+    /// </summary>
+    [DoesNotReturn]
+    private void ThrowUncachedException(Exception ex) => throw MapApiException(ex);
 
     private T HandleGracefulDegradation<T>(string cacheKey, Exception originalException)
     {

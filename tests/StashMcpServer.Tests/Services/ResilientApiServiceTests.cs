@@ -90,6 +90,29 @@ public class ResilientApiServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ExecuteAsync_NotFound_ThrowsMcpExceptionWithDescriptiveMessage()
+    {
+        // Cached reads must surface the same descriptive error as uncached writes.
+        var ex = await Assert.ThrowsAsync<McpException>(() =>
+            _sut.ExecuteAsync<string>(
+                "notfound-key",
+                _ => throw new BitbucketNotFoundException("Not found", [], "PR#123")));
+
+        Assert.Contains("Resource not found", ex.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Forbidden_ThrowsMcpExceptionWithDescriptiveMessage()
+    {
+        var ex = await Assert.ThrowsAsync<McpException>(() =>
+            _sut.ExecuteAsync<string>(
+                "forbidden-key",
+                _ => throw new BitbucketForbiddenException("No access", [])));
+
+        Assert.Contains("Access forbidden", ex.Message);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_OperationCancelled_PropagatesWithoutWrapping()
     {
         using var cts = new CancellationTokenSource();
