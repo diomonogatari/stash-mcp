@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - Unreleased
+
+### Changed
+
+- Upgraded the MCP C# SDK (`ModelContextProtocol`) from `0.4.0-preview.3` to the stable **1.4.0** release. No server behavior or configuration changes.
+- Bumped the `McpServerFactory` test harness from `0.2.0` to the stable **1.0.0** release, now built against the stable MCP SDK.
+
+### Added
+
+- Tool annotations on all 41 MCP tools. The 32 read tools advertise `readOnlyHint`; the 9 write tools are explicitly marked non-read-only, with `destructiveHint` on `merge_pull_request` and `delete_pull_request_task` and `idempotentHint` on `approve_pull_request` and `delete_pull_request_task`. Every tool now carries a human-readable `title`. These let MCP clients make safer auto-approval decisions and render friendlier tool names.
+- A tool-metadata drift guard in the integration tests asserting the `readOnlyHint` set matches the write-tool classification, that every tool has a title, and that the destructive/idempotent hints match policy.
+
 ## [1.4.0] - 2026-06-05
 
 ### Changed

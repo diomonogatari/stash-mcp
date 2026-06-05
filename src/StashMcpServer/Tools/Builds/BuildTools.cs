@@ -18,7 +18,7 @@ public class BuildTools(
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "list_builds"), Description("List recent builds for a repository. Shows CI/CD pipeline history across commits on a branch.")]
+    [McpServerTool(Name = "list_builds", ReadOnly = true, Title = "List Builds"), Description("List recent builds for a repository. Shows CI/CD pipeline history across commits on a branch.")]
     public async Task<string> ListBuildsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -183,7 +183,7 @@ public class BuildTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_build_status"), Description("Get build status information for a specific commit. Shows CI/CD pipeline results. Note: Build status is retrieved globally by commit hash and does not require project/repository context.")]
+    [McpServerTool(Name = "get_build_status", ReadOnly = true, Title = "Get Build Status"), Description("Get build status information for a specific commit. Shows CI/CD pipeline results. Note: Build status is retrieved globally by commit hash and does not require project/repository context.")]
     public async Task<string> GetBuildStatusAsync(
         [Description("The full or short commit hash to get build status for.")] string commitId,
         [Description("Include summary statistics (default: true).")] bool includeStats = true,
@@ -312,7 +312,7 @@ public class BuildTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_pull_request_build_status"), Description("Get build status for the head commit of a pull request.")]
+    [McpServerTool(Name = "get_pull_request_build_status", ReadOnly = true, Title = "PR Build Status"), Description("Get build status for the head commit of a pull request.")]
     public async Task<string> GetPullRequestBuildStatusAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,

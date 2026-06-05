@@ -22,7 +22,7 @@ public class PullRequestTools(
 {
     #region Core PR Operations
 
-    [McpServerTool(Name = "get_pull_request_diff"), Description("Gets the diff text for a specific Bitbucket Server pull request.")]
+    [McpServerTool(Name = "get_pull_request_diff", ReadOnly = true, Title = "Get PR Diff"), Description("Gets the diff text for a specific Bitbucket Server pull request.")]
     public async Task<string> GetPullRequestDiffAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -78,7 +78,7 @@ public class PullRequestTools(
         }
     }
 
-    [McpServerTool(Name = "list_pull_requests"), Description("Lists pull requests for a repository with optional filtering.")]
+    [McpServerTool(Name = "list_pull_requests", ReadOnly = true, Title = "List Pull Requests"), Description("Lists pull requests for a repository with optional filtering.")]
     public async Task<string> ListPullRequestsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -166,7 +166,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_pull_request"), Description("Gets detailed metadata for a specific pull request.")]
+    [McpServerTool(Name = "get_pull_request", ReadOnly = true, Title = "Get Pull Request"), Description("Gets detailed metadata for a specific pull request.")]
     public async Task<string> GetPullRequestDetailsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -232,7 +232,7 @@ public class PullRequestTools(
 
     #region Comments
 
-    [McpServerTool(Name = "get_pull_request_comments"), Description("Gets all comments for a specific pull request, including code context and nested replies.")]
+    [McpServerTool(Name = "get_pull_request_comments", ReadOnly = true, Title = "Get PR Comments"), Description("Gets all comments for a specific pull request, including code context and nested replies.")]
     public async Task<string> GetPullRequestCommentsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -321,7 +321,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_pull_request_unresolved_comments"), Description("Gets only the unresolved/active comments for a pull request, typically representing open discussions or issues to address.")]
+    [McpServerTool(Name = "get_pull_request_unresolved_comments", ReadOnly = true, Title = "Unresolved PR Comments"), Description("Gets only the unresolved/active comments for a pull request, typically representing open discussions or issues to address.")]
     public async Task<string> GetPullRequestUnresolvedCommentsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -427,7 +427,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "reply_to_pull_request_comment"), Description("Reply to an existing comment on a pull request. Creates a threaded reply under the specified parent comment.")]
+    [McpServerTool(Name = "reply_to_pull_request_comment", ReadOnly = false, Destructive = false, Title = "Reply to PR Comment"), Description("Reply to an existing comment on a pull request. Creates a threaded reply under the specified parent comment.")]
     public async Task<string> ReplyToPullRequestCommentAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -514,7 +514,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "add_pull_request_comment"), Description("Add a new comment to a pull request. Can be a general comment or attached to a specific line in a file.")]
+    [McpServerTool(Name = "add_pull_request_comment", ReadOnly = false, Destructive = false, Title = "Add PR Comment"), Description("Add a new comment to a pull request. Can be a general comment or attached to a specific line in a file.")]
     public async Task<string> AddPullRequestCommentAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -734,7 +734,7 @@ public class PullRequestTools(
     /// Implements graceful degradation - optional sections fail independently without
     /// breaking the entire response.
     /// </summary>
-    [McpServerTool(Name = "get_pull_request_context")]
+    [McpServerTool(Name = "get_pull_request_context", ReadOnly = true, Title = "PR Context")]
     [Description("Get complete pull request details including metadata, comments, and optionally diff. Use this for comprehensive PR review context in a single call.")]
     public async Task<string> GetPullRequestContextAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
@@ -906,7 +906,7 @@ public class PullRequestTools(
 
     #region Management
 
-    [McpServerTool(Name = "create_pull_request"), Description("Create a new pull request from the source branch into the target branch.")]
+    [McpServerTool(Name = "create_pull_request", ReadOnly = false, Destructive = false, Title = "Create Pull Request"), Description("Create a new pull request from the source branch into the target branch.")]
     public async Task<string> CreatePullRequestAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -977,7 +977,7 @@ public class PullRequestTools(
         return FormatPullRequestSummary(result);
     }
 
-    [McpServerTool(Name = "update_pull_request"), Description("Update pull request metadata such as title, description, or reviewers.")]
+    [McpServerTool(Name = "update_pull_request", ReadOnly = false, Destructive = false, Title = "Update Pull Request"), Description("Update pull request metadata such as title, description, or reviewers.")]
     public async Task<string> UpdatePullRequestAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -1063,7 +1063,7 @@ public class PullRequestTools(
         return FormatPullRequestSummary(result);
     }
 
-    [McpServerTool(Name = "merge_pull_request"), Description("Merge an existing pull request. Optionally provide a custom merge message or strategy.")]
+    [McpServerTool(Name = "merge_pull_request", ReadOnly = false, Destructive = true, Title = "Merge Pull Request"), Description("Merge an existing pull request. Optionally provide a custom merge message or strategy.")]
     public async Task<string> MergePullRequestAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -1120,7 +1120,7 @@ public class PullRequestTools(
         return FormatPullRequestSummary(result);
     }
 
-    [McpServerTool(Name = "approve_pull_request"), Description("Approve a pull request.")]
+    [McpServerTool(Name = "approve_pull_request", ReadOnly = false, Destructive = false, Idempotent = true, Title = "Approve Pull Request"), Description("Approve a pull request.")]
     public async Task<string> ApprovePullRequestAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -1168,7 +1168,7 @@ public class PullRequestTools(
 
     #region Tasks
 
-    [McpServerTool(Name = "get_pull_request_tasks"), Description("List all tasks associated with a pull request. Tasks are actionable items that must be resolved before merging.")]
+    [McpServerTool(Name = "get_pull_request_tasks", ReadOnly = true, Title = "Get PR Tasks"), Description("List all tasks associated with a pull request. Tasks are actionable items that must be resolved before merging.")]
     public async Task<string> GetPullRequestTasksAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -1253,7 +1253,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "create_pull_request_task"), Description("Create a new task attached to a comment on a pull request. Tasks are actionable items that must be resolved before merging. Use `get_pull_request_comments` to find comment IDs. Tasks are always anchored to existing comments - you cannot create a standalone task. When context parameters (projectKey, repositorySlug, pullRequestId) are provided, the comment will be validated to ensure it exists on the specified PR.")]
+    [McpServerTool(Name = "create_pull_request_task", ReadOnly = false, Destructive = false, Title = "Create PR Task"), Description("Create a new task attached to a comment on a pull request. Tasks are actionable items that must be resolved before merging. Use `get_pull_request_comments` to find comment IDs. Tasks are always anchored to existing comments - you cannot create a standalone task. When context parameters (projectKey, repositorySlug, pullRequestId) are provided, the comment will be validated to ensure it exists on the specified PR.")]
     public async Task<string> CreatePullRequestTaskAsync(
         [Description("The ID of the comment to attach the task to. Use `get_pull_request_comments` to find available comment IDs.")] int commentId,
         [Description("The task description text.")] string text,
@@ -1356,7 +1356,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "update_pull_request_task"), Description("Update an existing task's text and optional state. State can be 'OPEN' or 'RESOLVED'.")]
+    [McpServerTool(Name = "update_pull_request_task", ReadOnly = false, Destructive = false, Title = "Update PR Task"), Description("Update an existing task's text and optional state. State can be 'OPEN' or 'RESOLVED'.")]
     public async Task<string> UpdatePullRequestTaskAsync(
         [Description("The ID of the task to update.")] int taskId,
         [Description("The new task description text.")] string text,
@@ -1423,7 +1423,7 @@ public class PullRequestTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "delete_pull_request_task"), Description("Delete a task from a pull request.")]
+    [McpServerTool(Name = "delete_pull_request_task", ReadOnly = false, Destructive = true, Idempotent = true, Title = "Delete PR Task"), Description("Delete a task from a pull request.")]
     public async Task<string> DeletePullRequestTaskAsync(
         [Description("The ID of the task to delete.")] int taskId,
         CancellationToken cancellationToken = default)

@@ -17,7 +17,7 @@ public class RepositoryTools(
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "list_repositories"), Description("List repositories within a specific project.")]
+    [McpServerTool(Name = "list_repositories", ReadOnly = true, Title = "List Repositories"), Description("List repositories within a specific project.")]
     public async Task<string> ListRepositoriesAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("Return minimal output (repository slugs only). Default is false.")] bool minimalOutput = false,
@@ -76,7 +76,7 @@ public class RepositoryTools(
         return builder.ToString();
     }
 
-    [McpServerTool(Name = "get_file_content"), Description("Gets the raw content of a file in a repository at a specific commit or branch.")]
+    [McpServerTool(Name = "get_file_content", ReadOnly = true, Title = "Get File Content"), Description("Gets the raw content of a file in a repository at a specific commit or branch.")]
     public async Task<string> GetFileContentAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -117,7 +117,7 @@ public class RepositoryTools(
     /// Workflow-oriented tool that provides a comprehensive repository overview in a single call.
     /// Useful when exploring a new repository or getting oriented with a codebase.
     /// </summary>
-    [McpServerTool(Name = "get_repository_overview")]
+    [McpServerTool(Name = "get_repository_overview", ReadOnly = true, Title = "Repository Overview")]
     [Description("Get comprehensive repository information including default branch, recent branches, tags, and structure. Use this to quickly understand a repository's state.")]
     public async Task<string> GetRepositoryOverviewAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,

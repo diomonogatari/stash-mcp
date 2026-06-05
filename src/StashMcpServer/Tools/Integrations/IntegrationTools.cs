@@ -15,7 +15,7 @@ public class IntegrationTools(
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "get_pull_request_jira_issues"), Description("Get Jira issues linked to a pull request via commit messages and branch names.")]
+    [McpServerTool(Name = "get_pull_request_jira_issues", ReadOnly = true, Title = "PR Jira Issues"), Description("Get Jira issues linked to a pull request via commit messages and branch names.")]
     public async Task<string> GetPullRequestJiraIssuesAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,

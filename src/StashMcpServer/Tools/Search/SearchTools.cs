@@ -34,7 +34,7 @@ public class SearchTools(
 
     #region Code Search
 
-    [McpServerTool(Name = "search_code"), Description("""
+    [McpServerTool(Name = "search_code", ReadOnly = true, Title = "Search Code"), Description("""
         Search for code patterns in repository files.
         
         Uses server-side Elasticsearch when available for fast, indexed search.
@@ -460,7 +460,7 @@ public class SearchTools(
 
     #region Commit Search
 
-    [McpServerTool(Name = "search_commits"), Description("""
+    [McpServerTool(Name = "search_commits", ReadOnly = true, Title = "Search Commits"), Description("""
         Search commit messages across a repository or multiple repositories.
         
         Searches commit history by message text, author, and/or date range.
@@ -601,7 +601,7 @@ public class SearchTools(
 
     #region Pull Request Search
 
-    [McpServerTool(Name = "search_pull_requests"), Description("""
+    [McpServerTool(Name = "search_pull_requests", ReadOnly = true, Title = "Search Pull Requests"), Description("""
         Search pull requests by title, description, author, or state across a repository or project.
         
         Searches PR metadata and returns matching pull requests with key information.
@@ -716,7 +716,7 @@ public class SearchTools(
 
     #region User Search
 
-    [McpServerTool(Name = "search_users"), Description("""
+    [McpServerTool(Name = "search_users", ReadOnly = true, Title = "Search Users"), Description("""
         Search for Bitbucket users by name, username, or email.
         
         This tool helps find users for operations like adding reviewers to pull requests

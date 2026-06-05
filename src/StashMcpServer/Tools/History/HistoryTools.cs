@@ -19,7 +19,7 @@ public class HistoryTools(
     IDiffFormatter diffFormatter)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "get_commit"), Description("Get details of a specific commit.")]
+    [McpServerTool(Name = "get_commit", ReadOnly = true, Title = "Get Commit"), Description("Get details of a specific commit.")]
     public async Task<string> GetCommitAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -71,7 +71,7 @@ public class HistoryTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "list_commits"), Description("List commits in a repository. Returns commit history for a branch, tag, or from a specific commit.")]
+    [McpServerTool(Name = "list_commits", ReadOnly = true, Title = "List Commits"), Description("List commits in a repository. Returns commit history for a branch, tag, or from a specific commit.")]
     public async Task<string> ListCommitsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -169,7 +169,7 @@ public class HistoryTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_commit_changes"), Description("View the files changed in a specific commit.")]
+    [McpServerTool(Name = "get_commit_changes", ReadOnly = true, Title = "Get Commit Changes"), Description("View the files changed in a specific commit.")]
     public async Task<string> GetCommitChangesAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -230,7 +230,7 @@ public class HistoryTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "compare_refs"), Description("Compare the diff between two refs (branches, tags, or commits) in a repository.")]
+    [McpServerTool(Name = "compare_refs", ReadOnly = true, Title = "Compare Refs"), Description("Compare the diff between two refs (branches, tags, or commits) in a repository.")]
     public async Task<string> CompareRefsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -278,7 +278,7 @@ public class HistoryTools(
     /// Workflow-oriented tool that provides complete commit context in a single call.
     /// Useful when investigating a specific commit's impact and changes.
     /// </summary>
-    [McpServerTool(Name = "get_commit_context")]
+    [McpServerTool(Name = "get_commit_context", ReadOnly = true, Title = "Commit Context")]
     [Description("Get complete commit details including metadata, changed files, and optionally the diff. Use this to understand a commit's full impact.")]
     public async Task<string> GetCommitContextAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,

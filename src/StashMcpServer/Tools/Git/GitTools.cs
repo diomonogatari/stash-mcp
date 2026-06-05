@@ -18,7 +18,7 @@ public class GitTools(
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "list_branches"), Description("List branches in a repository, optionally filtered by name.")]
+    [McpServerTool(Name = "list_branches", ReadOnly = true, Title = "List Branches"), Description("List branches in a repository, optionally filtered by name.")]
     public async Task<string> ListBranchesAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -89,7 +89,7 @@ public class GitTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "list_tags"), Description("List tags to identify release points.")]
+    [McpServerTool(Name = "list_tags", ReadOnly = true, Title = "List Tags"), Description("List tags to identify release points.")]
     public async Task<string> ListTagsAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,
@@ -158,7 +158,7 @@ public class GitTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "list_files"), Description("List files in a repository at a specific path or root.")]
+    [McpServerTool(Name = "list_files", ReadOnly = true, Title = "List Files"), Description("List files in a repository at a specific path or root.")]
     public async Task<string> ListFilesAsync(
         [Description("The key of the Bitbucket project.")] string projectKey,
         [Description("The slug of the Bitbucket repository.")] string repositorySlug,

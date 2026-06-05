@@ -17,7 +17,7 @@ public class DashboardTools(
     IServerSettings serverSettings)
     : ToolBase(logger, cacheService, resilientApi, client, serverSettings)
 {
-    [McpServerTool(Name = "get_my_pull_requests"), Description("Get pull requests authored by, reviewing, or participating in by the current user across all repositories.")]
+    [McpServerTool(Name = "get_my_pull_requests", ReadOnly = true, Title = "My Pull Requests"), Description("Get pull requests authored by, reviewing, or participating in by the current user across all repositories.")]
     public async Task<string> GetMyPullRequestsAsync(
         [Description("Filter by role: 'AUTHOR', 'REVIEWER', or 'PARTICIPANT'. Default is 'AUTHOR'.")] string role = "AUTHOR",
         [Description("Filter by state: 'OPEN', 'MERGED', 'DECLINED', or 'ALL'. Default is 'OPEN'.")] string state = "OPEN",
@@ -86,7 +86,7 @@ public class DashboardTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_inbox_pull_requests"), Description("Get pull requests in the current user's review inbox - PRs awaiting their attention.")]
+    [McpServerTool(Name = "get_inbox_pull_requests", ReadOnly = true, Title = "Inbox Pull Requests"), Description("Get pull requests in the current user's review inbox - PRs awaiting their attention.")]
     public async Task<string> GetInboxPullRequestsAsync(
         [Description("Filter by role in the PR: 'REVIEWER' (default) or empty for all inbox items.")] string role = "REVIEWER",
         [Description("Maximum number of pull requests to return. Default is 25.")] int limit = 25,
@@ -149,7 +149,7 @@ public class DashboardTools(
         return sb.ToString();
     }
 
-    [McpServerTool(Name = "get_recent_repositories"), Description("Get repositories the current user has recently accessed.")]
+    [McpServerTool(Name = "get_recent_repositories", ReadOnly = true, Title = "Recent Repositories"), Description("Get repositories the current user has recently accessed.")]
     public Task<string> GetRecentRepositoriesAsync()
     {
         LogToolInvocation(nameof(GetRecentRepositoriesAsync));
@@ -174,7 +174,7 @@ public class DashboardTools(
         return Task.FromResult(sb.ToString());
     }
 
-    [McpServerTool(Name = "get_server_info"), Description("Get information about the Bitbucket Server instance and cache status.")]
+    [McpServerTool(Name = "get_server_info", ReadOnly = true, Title = "Server Info"), Description("Get information about the Bitbucket Server instance and cache status.")]
     public Task<string> GetServerInfoAsync()
     {
         LogToolInvocation(nameof(GetServerInfoAsync));
@@ -218,7 +218,7 @@ public class DashboardTools(
         return Task.FromResult(sb.ToString());
     }
 
-    [McpServerTool(Name = "get_current_user"), Description("Get information about the currently authenticated user.")]
+    [McpServerTool(Name = "get_current_user", ReadOnly = true, Title = "Current User"), Description("Get information about the currently authenticated user.")]
     public Task<string> GetCurrentUserAsync()
     {
         LogToolInvocation(nameof(GetCurrentUserAsync));
