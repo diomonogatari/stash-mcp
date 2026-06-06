@@ -44,21 +44,18 @@
       "group": "test"
     },
     {
-      "label": "test: system e2e (Docker + STASH_TEST_LICENSE)",
-      "detail": "Boots a real Bitbucket container and runs the end-to-end tests. Requires Docker and a timebomb license in $STASH_TEST_LICENSE.",
+      "label": "test: system e2e (Docker + system.runsettings)",
+      "detail": "Boots a real Bitbucket container and runs the end-to-end tests. Reads the license from tests/StashMcpServer.SystemTests/system.runsettings (copy the .example and paste a license). Requires Docker. Use THIS — the Test Explorer gutter button doesn't apply runsettings env vars, but `dotnet test --settings` does.",
       "type": "process",
       "command": "dotnet",
       "args": [
         "test",
         "${workspaceFolder}/tests/StashMcpServer.SystemTests/StashMcpServer.SystemTests.csproj",
+        "--settings",
+        "${workspaceFolder}/tests/StashMcpServer.SystemTests/system.runsettings",
         "--logger",
-        "console;verbosity=detailed"
+        "console;verbosity=normal"
       ],
-      "options": {
-        "env": {
-          "STASH_TEST_LICENSE": "${env:STASH_TEST_LICENSE}"
-        }
-      },
       "problemMatcher": "$msCompile",
       "group": "test"
     }
