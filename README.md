@@ -373,6 +373,7 @@ For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITE
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and folder structure
 - [Tool Reference](docs/TOOLSET.md) — Detailed documentation for all 41 tools
+- [Local Bitbucket](docs/local-bitbucket.md) — Run a real Bitbucket Server in Docker for end-to-end testing
 - [Contributing](CONTRIBUTING.md) — Development setup and pull request guidelines
 - [Security](SECURITY.md) — Vulnerability reporting and credential safety
 - [Changelog](CHANGELOG.md) — Version history and release notes

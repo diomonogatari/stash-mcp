@@ -130,6 +130,10 @@ Tools that reference non-cached projects fall through gracefully: `NormalizeProj
 
 **Response Safety**: Output is truncated at 50KB to prevent context window overflow in AI clients.
 
+**Tool Annotations**: Every `[McpServerTool]` carries MCP annotations — `readOnlyHint` on the 32 read tools, `destructiveHint`/`idempotentHint` on the write tools, and a human-readable `title` — so clients can make safer auto-approval decisions and render friendly names. A drift-guard test keeps the `readOnlyHint` set aligned with the read-only-mode write guard.
+
+**Security Analysis**: The `McpGuard.Analyzers` Roslyn analyzer scans every tool `[Description]` for prompt-injection / tool-poisoning patterns (`MCPG001`–`MCPG013`). The recommended rule set is pinned to `error` in `.editorconfig`, so a finding fails the build locally and in CI.
+
 ### Integration Testing Architecture
 
 stash-mcp now includes a dedicated integration testing stack built around
@@ -147,6 +151,15 @@ This gives end-to-end confidence for tool registration, parameter binding,
 result serialization, read-only guards, and lifecycle/disposal behavior while
 remaining fully local and deterministic.
 
+### System (End-to-End) Testing
+
+`tests/StashMcpServer.SystemTests` exercises the full pipeline against a **real
+Bitbucket Server** started in Docker via Testcontainers and seeded with projects,
+repositories, and pull requests, driving tools through the live MCP transport.
+These tests are Docker-backed and opt-in (xUnit category `SystemTest`, excluded
+from CI); see `tests/StashMcpServer.SystemTests/README.md` and
+[local-bitbucket.md](local-bitbucket.md) for how to run them.
+
 ### Dependencies
 
 | Package | Purpose |
@@ -156,3 +169,4 @@ remaining fully local and deterministic.
 | Serilog.Extensions.Logging | Structured logging |
 | Microsoft.Extensions.Resilience | Polly integration for retry/circuit breaker |
 | Meziantou.Analyzer | Code quality analysis |
+| McpGuard.Analyzers | Security analysis of MCP tool descriptions (prompt-injection / tool-poisoning) |

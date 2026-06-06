@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.0] - Unreleased
+## [1.5.0] - 2026-06-06
 
 ### Changed
 
@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tool annotations on all 41 MCP tools. The 32 read tools advertise `readOnlyHint`; the 9 write tools are explicitly marked non-read-only, with `destructiveHint` on `merge_pull_request` and `delete_pull_request_task` and `idempotentHint` on `approve_pull_request` and `delete_pull_request_task`. Every tool now carries a human-readable `title`. These let MCP clients make safer auto-approval decisions and render friendlier tool names.
 - A tool-metadata drift guard in the integration tests asserting the `readOnlyHint` set matches the write-tool classification, that every tool has a title, and that the destructive/idempotent hints match policy.
 - Integrated the `McpGuard.Analyzers` **1.0.0** Roslyn analyzer (build-time, `PrivateAssets=all`) as a security gate over MCP tool `[Description]` attributes, detecting prompt-injection / tool-poisoning phrasing and hidden Unicode (rules `MCPG001`–`MCPG013`). The tool surface is clean (no findings). The recommended gating rule set is pinned to `error` in `.editorconfig`, so a violation fails the build locally **and in CI** — decoupled from the general `TreatWarningsAsErrors` policy so the security gate holds even if that is ever relaxed.
+- An end-to-end system test harness (`tests/StashMcpServer.SystemTests`) that runs the full pipeline against a real Bitbucket Server started in Docker via Testcontainers — seeded with projects, repositories, and pull requests, and driven through the live MCP transport. The tests are Docker-backed and opt-in (xUnit category `SystemTest`, excluded from CI), runnable from the CLI or the VS Code Test Explorer; see [docs/local-bitbucket.md](docs/local-bitbucket.md).
+- VS Code launch / tasks / extensions configuration for building, running, and debugging the server and its tests.
 
 ## [1.4.0] - 2026-06-05
 
