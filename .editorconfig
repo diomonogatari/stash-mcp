@@ -268,3 +268,22 @@ dotnet_diagnostic.MA0009.severity = suggestion  # Regex DoS — user-provided pa
 dotnet_diagnostic.MA0026.severity = suggestion  # TODO comments — legitimate tracking
 dotnet_diagnostic.MA0051.severity = suggestion  # Method too long — address incrementally
 dotnet_diagnostic.MA0074.severity = suggestion  # Use StringComparison overload
+
+# MCP Guard (security) — fail the build on prompt-injection / tool-poisoning in MCP tool
+# [Description] attributes. Set as hard errors and decoupled from TreatWarningsAsErrors so the
+# security gate holds even if the general warnings policy is ever relaxed. CI is gated by this:
+# the Build step runs `dotnet build`, which honors these severities. Mirrors mcp-guard's
+# recommended gating set. MCPG007/MCPG011 are advisory (left at their info default); MCPG012
+# (confirmed exfiltration) is error by default; MCPG013 (integrity baseline) is inert until a
+# McpGuard.Baseline.txt is committed.
+dotnet_diagnostic.MCPG001.severity = error
+dotnet_diagnostic.MCPG002.severity = error
+dotnet_diagnostic.MCPG003.severity = error
+dotnet_diagnostic.MCPG004.severity = error
+dotnet_diagnostic.MCPG005.severity = error
+dotnet_diagnostic.MCPG006.severity = error
+dotnet_diagnostic.MCPG008.severity = error
+dotnet_diagnostic.MCPG009.severity = error
+dotnet_diagnostic.MCPG010.severity = error
+dotnet_diagnostic.MCPG012.severity = error
+dotnet_diagnostic.MCPG013.severity = error
