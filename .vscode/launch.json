@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Runs the MCP server over stdio in the integrated terminal, so you can poke it by hand
+      // (or attach an MCP client). Point it at a running Bitbucket — e.g. the local container
+      // from tests/local-bitbucket/docker-compose.yml — and paste an HTTP access token.
+      "name": "Run Stash MCP Server (stdio)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/StashMcpServer/bin/Debug/net10.0/StashMcpServer.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/StashMcpServer",
+      "stopAtEntry": false,
+      "console": "integratedTerminal",
+      "env": {
+        "BITBUCKET_URL": "${input:bitbucketUrl}",
+        "BITBUCKET_TOKEN": "${input:bitbucketToken}"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "bitbucketUrl",
+      "type": "promptString",
+      "description": "Bitbucket base URL",
+      "default": "http://localhost:7990/"
+    },
+    {
+      "id": "bitbucketToken",
+      "type": "promptString",
+      "description": "Bitbucket HTTP access token (PAT)",
+      "password": true
+    }
+  ]
+}

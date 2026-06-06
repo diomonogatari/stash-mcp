@@ -1,0 +1,66 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/stash-mcp.slnx"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "test",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/stash-mcp.slnx"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "test: fast (skip system e2e)",
+      "detail": "Unit + integration tests only; excludes the Testcontainers-backed system tests.",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/stash-mcp.slnx",
+        "--filter",
+        "Category!=SystemTest"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    },
+    {
+      "label": "test: system e2e (Docker + STASH_TEST_LICENSE)",
+      "detail": "Boots a real Bitbucket container and runs the end-to-end tests. Requires Docker and a timebomb license in $STASH_TEST_LICENSE.",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "test",
+        "${workspaceFolder}/tests/StashMcpServer.SystemTests/StashMcpServer.SystemTests.csproj",
+        "--logger",
+        "console;verbosity=detailed"
+      ],
+      "options": {
+        "env": {
+          "STASH_TEST_LICENSE": "${env:STASH_TEST_LICENSE}"
+        }
+      },
+      "problemMatcher": "$msCompile",
+      "group": "test"
+    }
+  ]
+}
