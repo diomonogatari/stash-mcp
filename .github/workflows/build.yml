@@ -39,10 +39,12 @@ jobs:
       - name: Build
         run: dotnet build stash-mcp.slnx --no-restore
 
+      # The Docker-backed system tests (Category=SystemTest) are local/manual only — excluded here.
       - name: Test
         run: >
           dotnet test stash-mcp.slnx
           --no-build
+          --filter "Category!=SystemTest"
           --collect:"XPlat Code Coverage"
           --results-directory ./coverage
 
