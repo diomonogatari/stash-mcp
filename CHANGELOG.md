@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Tool annotations on all 41 MCP tools. The 32 read tools advertise `readOnlyHint`; the 9 write tools are explicitly marked non-read-only, with `destructiveHint` on `merge_pull_request` and `delete_pull_request_task` and `idempotentHint` on `approve_pull_request` and `delete_pull_request_task`. Every tool now carries a human-readable `title`. These let MCP clients make safer auto-approval decisions and render friendlier tool names.
 - A tool-metadata drift guard in the integration tests asserting the `readOnlyHint` set matches the write-tool classification, that every tool has a title, and that the destructive/idempotent hints match policy.
-- Integrated the `McpGuard.Analyzers` Roslyn analyzer (build-time, `PrivateAssets=all`) as a security gate over MCP tool `[Description]` attributes: `MCPG001` flags instruction-style / prompt-injection phrasing and `MCPG002` flags hidden Unicode. The tool surface is clean (no findings); under the existing `TreatWarningsAsErrors`, any future violation fails the build.
+- Integrated the `McpGuard.Analyzers` **1.0.0** Roslyn analyzer (build-time, `PrivateAssets=all`) as a security gate over MCP tool `[Description]` attributes: `MCPG001` flags instruction-style / prompt-injection phrasing and `MCPG002` flags hidden Unicode. The tool surface is clean (no findings); under the existing `TreatWarningsAsErrors`, any future violation fails the build.
 
 ## [1.4.0] - 2026-06-05
 
