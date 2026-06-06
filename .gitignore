@@ -20,6 +20,10 @@ pull_request_diff.txt
 # Local test run settings (may contain a Bitbucket timebomb license) — keep out of git.
 # The committed *.runsettings.example template is fine; the real *.runsettings is not.
 *.runsettings
+# A Bitbucket timebomb license stashed in a plain file, however you name it — never commit it.
+**/bitbucket-test-license.txt
+**/*.timebomb
+**/*timebomb*.txt
 
 # Visual Studio files
 .vs/

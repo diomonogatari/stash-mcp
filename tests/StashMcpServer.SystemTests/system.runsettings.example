@@ -9,8 +9,14 @@
          "dotnet.unitTests.runSettingsPath": "tests/StashMcpServer.SystemTests/system.runsettings"
     4. Reload the window. Docker must be running.
 
-  See README.md for where to get the license (use the "10 user Bitbucket Data Center, 3 hours" entry,
-  copied exactly).
+  Where to get the license — Atlassian's published timebomb licenses (free):
+    https://developer.atlassian.com/platform/marketplace/timebomb-licenses-for-testing-server-apps/
+    Use the "10 user Bitbucket Data Center license, expires in 3 hours" entry, copied EXACTLY
+    (the page wraps the key; join it into one unbroken line or Bitbucket rejects it).
+
+  You do NOT need a new license every 3 hours: the "3 hours" is how long a running instance stays up,
+  not the string's validity. The string is reusable forever; each test run boots a fresh ~60s
+  container, so the limit is never hit. (Left a manual instance up >3h? Just restart it.)
 -->
 <RunSettings>
   <RunConfiguration>
