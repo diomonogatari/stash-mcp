@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Lets the VS Code C# Dev Kit Test Explorer RUN the Docker-backed system tests (otherwise they skip).
+
+  Setup:
+    1. Copy this file to "system.runsettings" (gitignored, so your license is never committed).
+    2. Paste your Bitbucket Data Center timebomb license into STASH_TEST_LICENSE below.
+    3. Add to VS Code settings (.vscode/settings.json or user settings):
+         "dotnet.unitTests.runSettingsPath": "tests/StashMcpServer.SystemTests/system.runsettings"
+    4. Reload the window. Docker must be running.
+
+  See README.md for where to get the license (use the "10 user Bitbucket Data Center, 3 hours" entry,
+  copied exactly).
+-->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <STASH_TEST_LICENSE>PASTE_YOUR_BITBUCKET_DC_TIMEBOMB_LICENSE_HERE</STASH_TEST_LICENSE>
+      <!-- Optional: raise the boot budget on slower machines (default 10). -->
+      <!-- <STASH_TEST_STARTUP_TIMEOUT_MINUTES>12</STASH_TEST_STARTUP_TIMEOUT_MINUTES> -->
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

@@ -17,6 +17,10 @@ artifacts/*.dll
 # Test files
 pull_request_diff.txt
 
+# Local test run settings (may contain a Bitbucket timebomb license) — keep out of git.
+# The committed *.runsettings.example template is fine; the real *.runsettings is not.
+*.runsettings
+
 # Visual Studio files
 .vs/
 *.ncrunch*

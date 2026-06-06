@@ -60,6 +60,23 @@ faster. Budget **~2 GB RAM** for the container.
 | `STASH_TEST_LICENSE` | yes | — | Bitbucket DC timebomb license. Absent ⇒ tests skip. |
 | `STASH_TEST_BITBUCKET_IMAGE` | no | `atlassian/bitbucket:9.6` | Override the image/tag under test. |
 
+### Running them in VS Code
+
+The C# Dev Kit Test Explorer discovers these tests, but they **skip** unless the test host has
+`STASH_TEST_LICENSE` set (and Docker is running) — that's why they show as "not run". Two options:
+
+- **Integrated terminal (quick):** set the variable, then run the `test: system e2e` task (or just
+  `STASH_TEST_LICENSE='…' dotnet test tests/StashMcpServer.SystemTests/StashMcpServer.SystemTests.csproj`).
+  Tip: launching VS Code from a shell that already `export`ed the variable makes the whole Test
+  Explorer pick it up.
+- **Test Explorer "Run" (persistent):** copy [`system.runsettings.example`](system.runsettings.example)
+  to `system.runsettings` (gitignored), paste your license, and add to your VS Code settings:
+  `"dotnet.unitTests.runSettingsPath": "tests/StashMcpServer.SystemTests/system.runsettings"`. Reload
+  the window; the tests now run from the gutter/Test Explorer.
+
+> Rebuild after pulling so discovery matches the code (an old `GetCurrentUser_*` test was replaced by
+> `GetServerInfo_*`).
+
 ## What the harness does
 
 1. **Boots** `atlassian/bitbucket` with fully unattended setup: an entrypoint wrapper writes a
