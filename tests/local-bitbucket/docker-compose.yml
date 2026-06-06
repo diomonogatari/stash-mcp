@@ -1,0 +1,33 @@
+# Manual, throwaway Bitbucket Data Center for hands-on testing of stash-mcp.
+#
+# This is the by-hand counterpart to the automated StashMcpServer.SystemTests harness. Unlike that
+# harness (which injects a bitbucket.properties for fully unattended setup), this compose file leaves
+# you to complete Bitbucket's short browser setup wizard once — which is fine for clicking around.
+#
+#   docker compose -f tests/local-bitbucket/docker-compose.yml up
+#
+# Then open http://localhost:7990 and complete the wizard:
+#   1. Database     -> "Internal" (embedded) — no external DB needed.
+#   2. License      -> paste a Bitbucket DC timebomb license (see ../../docs/local-bitbucket.md).
+#   3. Administrator -> create an admin account.
+# When GET http://localhost:7990/status returns {"state":"RUNNING"} it's ready.
+#
+# Tear down (and wipe the named volume) with:
+#   docker compose -f tests/local-bitbucket/docker-compose.yml down -v
+services:
+  bitbucket:
+    image: ${STASH_TEST_BITBUCKET_IMAGE:-atlassian/bitbucket:9.6}
+    ports:
+      - "7990:7990" # HTTP / REST
+      - "7999:7999" # Git over SSH
+    environment:
+      SEARCH_ENABLED: "false" # don't start bundled OpenSearch
+      JVM_MINIMUM_MEMORY: "1024m"
+      JVM_MAXIMUM_MEMORY: "1024m"
+    # The named volume persists your setup + data across restarts so you only run the wizard once.
+    # The embedded database is used because no JDBC_* settings are supplied. Drop the volume
+    # (down -v) to start completely fresh.
+    volumes:
+      - bitbucket-data:/var/atlassian/application-data/bitbucket
+volumes:
+  bitbucket-data:
