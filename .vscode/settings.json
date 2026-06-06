@@ -13,4 +13,8 @@
     "**/bin": true,
     "**/obj": true
   },
+  // Lets the Test Explorer run the Docker-backed system tests by injecting STASH_TEST_LICENSE.
+  // Points at a per-developer, gitignored file — copy system.runsettings.example to create it.
+  // Contributors without that file: the system tests just skip (this setting is then a no-op).
+  "dotnet.unitTests.runSettingsPath": "tests/StashMcpServer.SystemTests/system.runsettings"
 }

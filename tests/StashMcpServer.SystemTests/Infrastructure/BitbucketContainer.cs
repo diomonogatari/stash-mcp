@@ -73,9 +73,12 @@ internal static class BitbucketContainer
 
     private static string BuildSetupProperties(string license)
     {
-        // In a .properties value, backslash is the only character that needs escaping; timebomb
-        // licenses are base64 (no backslashes), but escape defensively for arbitrary input.
-        var escapedLicense = license.Trim().Replace("\\", "\\\\", StringComparison.Ordinal);
+        // Strip any whitespace the license picked up from line-wrapping (pasted from the docs page,
+        // or a multi-line <STASH_TEST_LICENSE> runsettings element) — base64 has none, so removing
+        // it is safe and makes the license forgiving to provide. Backslash is the only character a
+        // .properties value must escape; licenses have none, but escape defensively.
+        var cleanedLicense = new string(license.Where(c => !char.IsWhiteSpace(c)).ToArray());
+        var escapedLicense = cleanedLicense.Replace("\\", "\\\\", StringComparison.Ordinal);
 
         var lines = new[]
         {
